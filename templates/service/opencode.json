@@ -1,0 +1,191 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "planner",
+  "agent": {
+    "build": { "disable": true },
+    "plan": { "disable": true },
+    "planner": {
+      "model": "<your-heavy-model>",
+      "instructions": [
+        "../.docs/PDR.md",
+        "../.docs/architecture.md",
+        "../.docs/contracts/*.yaml",
+        ".docs/specs.md",
+        ".docs/architecture/architecture.md",
+        ".docs/infra/server.md",
+        ".docs/infra/ops.md",
+        ".docs/security-issues.md"
+      ],
+      "permission": {
+        "edit": "ask",
+        "bash": {
+          "*": "ask",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "git status": "allow",
+          "git diff*": "allow",
+          "git log*": "allow"
+        }
+      },
+      "tools": {
+        "write": true,
+        "edit": true,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "bash": true,
+        "skill": true,
+        "task": false
+      }
+    },
+    "builder": {
+      "model": "<your-light-model>",
+      "instructions": [
+        ".docs/specs.md",
+        ".docs/architecture/architecture.md",
+        ".docs/infra/server.md"
+      ],
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "*": "ask",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "mkdir *": "allow",
+          "touch *": "allow",
+          "cp *": "allow",
+          "mv *": "allow",
+          "git status": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git add *": "allow",
+          "git restore *": "allow",
+          "git commit -m *": "allow",
+          "git commit*": "ask",
+          "git push*": "ask",
+          "git reset*": "ask",
+          "rm *": "ask",
+          "sudo *": "ask",
+          "curl *": "ask",
+          "wget *": "ask"
+        },
+        "task": {
+          "*": "deny",
+          "code-reviewer": "allow",
+          "security-reviewer": "allow"
+        }
+      },
+      "tools": {
+        "write": true,
+        "edit": true,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "bash": true,
+        "skill": true,
+        "task": true
+      }
+    },
+    "code-reviewer": {
+      "model": "<your-heavy-model>",
+      "instructions": [
+        ".docs/specs.md",
+        ".docs/architecture/architecture.md"
+      ],
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "*": "ask",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "git status": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git add *": "allow",
+          "git restore *": "allow",
+          "git commit*": "deny",
+          "git push*": "deny",
+          "git reset*": "deny",
+          "rm *": "ask",
+          "sudo *": "deny",
+          "curl *": "deny",
+          "wget *": "deny"
+        }
+      },
+      "tools": {
+        "write": true,
+        "edit": true,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "bash": true,
+        "skill": true,
+        "task": false
+      }
+    },
+    "security-reviewer": {
+      "model": "<your-heavy-model>",
+      "instructions": [
+        ".docs/specs.md",
+        ".docs/architecture/architecture.md",
+        ".docs/security-issues.md"
+      ],
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "ask",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "git status": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git commit*": "deny",
+          "git push*": "deny",
+          "rm *": "deny",
+          "sudo *": "deny",
+          "curl *": "deny",
+          "wget *": "deny"
+        }
+      },
+      "tools": {
+        "write": true,
+        "edit": false,
+        "read": true,
+        "grep": true,
+        "glob": true,
+        "bash": true,
+        "skill": true,
+        "task": false
+      }
+    }
+  },
+  "permission": {
+    "edit": "ask",
+    "bash": {
+      "*": "ask",
+      "ls *": "allow",
+      "cat *": "allow",
+      "find *": "allow",
+      "grep *": "allow",
+      "git status": "allow",
+      "git diff*": "allow",
+      "git log*": "allow"
+    }
+  }
+}
