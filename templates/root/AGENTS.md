@@ -24,8 +24,8 @@
 ├── opencode.json                  # eager-loaded project context + default_agent
 ├── .opencode/
 │   ├── agents/
-│   │   ├── planner.md             # primary agent — heavy model, doc work
-│   │   └── builder.md             # primary agent — light model, code work
+│   │   ├── planner-root.md        # primary agent — heavy model, doc work
+│   │   └── builder-root.md        # primary agent — light model, scaffolding only
 │   └── skills/
 │       ├── analyst/               # methodology: requirements elicitation → .docs/PDR.md
 │       └── architect-project/     # methodology: cross-service architecture
@@ -53,24 +53,24 @@ Do not re-read them unless you need to verify a specific section.
 
 ## Agents at this level
 
-- **`planner`** (default at session start) — produces and maintains
+- **`planner-root`** (default at session start) — produces and maintains
   project-level documentation. Uses the heavy/reasoning model. Loads
   skills `analyst` and `architect-project` as needed.
-- **`builder`** — present but rarely used at this level. Use only for
+- **`builder-root`** — present but rarely used at this level. Use only for
   small direct edits to project docs that don't require methodology.
-  For substantive design work, stay in `planner`.
+  For substantive design work, stay in `planner-root`.
 
 Switch agents with `Tab`.
 
 ## Session behavior
 
-At session start, the `planner` agent is active by default. Its default
+At session start, the `planner-root` agent is active by default. Its default
 behavior is to **perform a triage** of the project state and propose the
 next action — without requiring any specific keyword from the user. A
 greeting, an empty prompt, or a generic "go / let's start" is enough.
 
 If the user's first message contains specific instructions (e.g. "review
-architecture.md", "I want to redesign the auth boundary"), the planner
+architecture.md", "I want to redesign the auth boundary"), the planner-root
 follows those instructions instead of running the default triage.
 
 ## Workflow at this level
@@ -79,7 +79,7 @@ You operate at this level for **project-wide concerns**: gathering
 requirements, defining cross-service architecture, designing service
 contracts.
 
-The default flow on a fresh session, in `planner`:
+The default flow on a fresh session, in `planner-root`:
 
 1. **Triage**: check what project-level documentation exists and what's
    missing or outdated.

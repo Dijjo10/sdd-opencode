@@ -75,8 +75,8 @@ your-project/
 ├── opencode.json                # from this repo (root opencode.json)
 ├── .opencode/
 │   ├── agents/
-│   │   ├── planner.md           # from this repo (root planner)
-│   │   └── builder.md           # from this repo (builder)
+│   │   ├── planner-root.md      # from this repo (root planner)
+│   │   └── builder-root.md      # from this repo (root builder, scaffolding only)
 │   └── skills/
 │       ├── analyst/SKILL.md
 │       └── architect-project/SKILL.md
@@ -155,17 +155,36 @@ opencode
 
 ### Agents
 
-Four specialized agents carry the workflow:
+The pattern uses two layers of agents — **project-level** at the
+monorepo root, **service-level** inside each service folder. Names
+are intentionally distinct (`-root` suffix at root) to avoid
+namespace collisions when OpenCode merges agent definitions across
+config layers.
 
-| Agent               | Type        | Model tier | Role                                                          |
-| ------------------- | ----------- | ---------- | ------------------------------------------------------------- |
-| `planner`           | primary     | heavy      | Triages state, writes docs, plans tasks, runs wrap-ups        |
-| `builder`           | primary     | light      | Implements one micro-task per session, writes tests, iterates |
-| `code-reviewer`     | subagent    | heavy      | Reviews diff for code quality, applies fixes directly         |
-| `security-reviewer` | subagent    | heavy      | Read-only security review, invoked when task is flagged       |
+**At project root** (when you run `opencode` from monorepo root):
 
-Switch primary agents (`planner` ↔ `builder`) with `Tab`. Subagents are
+| Agent          | Type    | Model tier | Role                                                              |
+| -------------- | ------- | ---------- | ----------------------------------------------------------------- |
+| `planner-root` | primary | heavy      | PDR, cross-service architecture, infra, contracts                 |
+| `builder-root` | primary | light      | Project-level scaffolding only (CI/CD, root Dockerfile, etc.)     |
+
+**Inside a service** (when you run `opencode` from a service folder):
+
+| Agent               | Type    | Model tier | Role                                                          |
+| ------------------- | ------- | ---------- | ------------------------------------------------------------- |
+| `planner`           | primary | heavy      | Triages state, writes service docs, plans tasks, runs wrap-ups|
+| `builder`           | primary | light      | Implements one micro-task per session, writes tests, iterates |
+| `code-reviewer`     | subagent| heavy      | Reviews diff for code quality, applies fixes directly         |
+| `security-reviewer` | subagent| heavy      | Read-only security review, invoked when task is flagged       |
+
+Switch primary agents (planner ↔ builder) with `Tab`. Subagents are
 invoked by the builder explicitly when needed.
+
+> **Why the distinct names?** OpenCode merges agent definitions from
+> all `.opencode/agents/` directories along the path (root + service)
+> into a single namespace. If both root and service had agents named
+> `planner`, only one would be loaded — collision. The `-root` suffix
+> keeps them distinct so each level loads its intended agents.
 
 ### Workflow
 
@@ -241,16 +260,16 @@ the agent reads them when navigation requires.
 The planner's behavior is shaped by what it detects at triage. Each mode
 has a clear purpose:
 
-| Mode           | Trigger                                          | Output                                          |
-| -------------- |--------------------------------------------------| ----------------------------------------------- |
-| Setup          | Foundational docs missing                        | `specs.md` + `architecture.md`                  |
-| Brownfield     | User says "brownfield"                           | Baseline docs from existing code                |
-| Architecture   | New macro-task, no Plan section yet              | Plan section of macro-task ledger               |
-| Planning       | Plan approved, no Micro-tasks section yet        | Micro-tasks section                             |
-| Detailing      | Micro-task ready to start                        | Implementation plan in chat (not on disk)       |
-| Wrap-up        | All micro-tasks of a macro-task done             | Aggregate review, full tests, module doc update |
-| Refactor       | User says "refactor X" / significant pivot       | Impact report + new refactor macro-task         |
-| Express        | User says "quick fix" / "express", planner-gated | Implementation + one line in `express-log.md`   |
+| Mode           | Trigger                                                | Output                                          |
+| -------------- | ------------------------------------------------------ | ----------------------------------------------- |
+| Setup          | Foundational docs missing                              | `specs.md` + `architecture.md`                  |
+| Brownfield     | User says "modalità adozione" / "brownfield"           | Baseline docs from existing code                |
+| Architecture   | New macro-task, no Plan section yet                    | Plan section of macro-task ledger               |
+| Planning       | Plan approved, no Micro-tasks section yet              | Micro-tasks section                             |
+| Detailing      | Micro-task ready to start                              | Implementation plan in chat (not on disk)       |
+| Wrap-up        | All micro-tasks of a macro-task done                   | Aggregate review, full tests, module doc update |
+| Refactor       | User says "refactor X" / significant pivot             | Impact report + new refactor macro-task         |
+| Express        | User says "quick fix" / "express", planner-gated       | Implementation + one line in `express-log.md`   |
 
 The **builder** has its own modes when activated:
 
@@ -448,8 +467,8 @@ sdd-opencode/
 │   │   ├── opencode.json
 │   │   └── .opencode/
 │   │       ├── agents/
-│   │       │   ├── planner.md
-│   │       │   └── builder.md
+│   │       │   ├── planner-root.md
+│   │       │   └── builder-root.md
 │   │       └── skills/
 │   │           ├── analyst/SKILL.md
 │   │           └── architect-project/SKILL.md

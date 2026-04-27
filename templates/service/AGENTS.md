@@ -125,6 +125,15 @@ relevant work.
 Switch primary agents with `Tab`. Subagents are invoked automatically by
 the builder; you can also invoke them manually with `@name` at any time.
 
+> **Note on agent naming**: the service-level `planner` and `builder`
+> are distinct from the project-level `planner-root` and `builder-root`
+> defined at the monorepo root. The names are intentionally different
+> to avoid namespace collisions when OpenCode merges agent definitions
+> across config layers. When working inside this service, you interact
+> with `planner` / `builder` (the service-level versions). When working
+> at the monorepo root for cross-service architecture or scaffolding,
+> the corresponding agents are `planner-root` / `builder-root`.
+
 ## Configuration sync
 
 Some `.md` files in this service contain **configurable placeholders**
