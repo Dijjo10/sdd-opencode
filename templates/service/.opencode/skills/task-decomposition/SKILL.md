@@ -155,12 +155,21 @@ that was created specifically to change direction.
 
 ## Output artifacts
 
-The pattern uses **two artifacts** for tracking macro and micro tasks:
+The pattern uses **three artifacts** for tracking macro and micro tasks:
 
-1. **`.docs/tasks/tasks.md`** — index of macro-tasks at service level
+1. **`.docs/tasks/tasks.md`** — index of macro-tasks at service level,
+   grouped by *state* (Active/Blocked/Skipped/Completed)
 2. **`.docs/tasks/task-NN-<name>.md`** — single ledger file per
    macro-task, containing plan, micro-tasks, decisions, and execution
    logs all in one place
+3. **`.docs/tasks/task-log.md`** — append-only *chronological* timeline of
+   task events (started / wrapped-up), decoupled from the numbering
+
+Why the log exists: task numbers (`task-NN`) are **stable identifiers**, not
+an execution order. When you insert an imminent `task-20` while `15–19`
+remain planned for later, the numeric order no longer reflects reality. The
+log records the real timeline so history stays readable without ever
+renumbering.
 
 This is intentionally consolidated. With modern context windows and
 file-reading tools, a single rich ledger per macro-task is more
@@ -225,6 +234,32 @@ whole macro-task state in one read.
 - `Completed` section holds history; grow freely. If it becomes
   unreadably long (rare, probably after a year+), archive to
   `tasks-archive.md`.
+
+### `.docs/tasks/task-log.md` — template
+
+````markdown
+# Task log — <service-name>
+
+> Chronological, append-only. One entry per task event, newest at the
+> bottom. Task numbers are stable IDs; this log is the real timeline.
+> Never reorder or renumber — only append.
+
+## <YYYY-MM-DD>
+
+- task-NN-<short-name>: started <note, e.g. "inserted ahead of 15–19, which
+  remain planned">
+- task-NN-<short-name>: wrapped up — <one-line outcome>
+````
+
+**Rules**:
+
+- **Append only** — never edit or delete past entries; the log is history.
+- The `planner` owns it: append a `started` entry when a macro-task moves to
+  `in-progress` (planning mode), and a `wrapped up` entry at the end of
+  wrap-up. Keep each line to one sentence.
+- The log complements `tasks.md` (which groups by state); it does not
+  replace it. If they ever disagree, `tasks.md` is authoritative for
+  *state*, the log for *chronology*.
 
 ### `.docs/tasks/task-NN-<name>.md` — ledger template
 

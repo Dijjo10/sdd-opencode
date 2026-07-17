@@ -240,6 +240,32 @@ Conventions:
 Do not attempt a full OpenAPI spec from scratch — start from the caller's
 needs (what data does the other service need?) and fill in progressively.
 
+### `.docs/contracts/external-<provider>.yaml` — third-party APIs
+
+When a service consumes a **third-party API** (a provider outside the
+monorepo), capture the surface actually used in a contract named
+`external-<provider>.yaml` — kept **distinct** from inter-service contracts
+(`openapi-<ms-name>.yaml`) so it's obvious which interfaces you own and which
+you merely depend on.
+
+Conventions:
+
+- **Filename**: `external-<provider>.yaml` (e.g. `external-<provider>-v<major>.yaml`
+  if the provider versions its API)
+- Document only the endpoints/fields the system relies on — not the whole
+  provider API
+- Record the provider's auth scheme and base URL as environment-driven
+  (never hard-code secrets)
+
+**Source-of-truth rule (project-level).** The local `external-<provider>.yaml`
+is the **structural** source of truth (what fields/shapes we depend on); the
+provider's **live official documentation** is the **semantic** source of
+truth. When they conflict, the live docs win, and the local contract must be
+realigned. This is why service agents must **fetch the provider's live docs
+before working against a third-party API** (see the service `planner`/`builder`
+prompts) — third-party surfaces are the classic place where working from
+memory produces silent bugs (e.g. an inconsistent or undocumented field name).
+
 ## Style rules
 
 - **ADRs are small**: one decision each, 5–10 lines total. If a decision

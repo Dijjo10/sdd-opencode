@@ -2,14 +2,17 @@
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "planner",
   "agent": {
-    "build": { "disable": true },
-    "plan": { "disable": true },
+    "build": {
+      "disable": true
+    },
+    "plan": {
+      "disable": true
+    },
     "planner": {
-      "model": "<your-heavy-model>",
       "instructions": [
-        "../.docs/PDR.md",
-        "../.docs/architecture.md",
-        "../.docs/contracts/*.yaml",
+        "../_project/.docs/PDR.md",
+        "../_project/.docs/architecture.md",
+        "../_project/.docs/contracts/*.yaml",
         ".docs/specs.md",
         ".docs/architecture/architecture.md",
         ".docs/infra/server.md",
@@ -29,6 +32,11 @@
           "git status": "allow",
           "git diff*": "allow",
           "git log*": "allow"
+        },
+        "task": {
+          "*": "deny",
+          "code-reviewer": "allow",
+          "security-reviewer": "allow"
         }
       },
       "tools": {
@@ -39,11 +47,10 @@
         "glob": true,
         "bash": true,
         "skill": true,
-        "task": false
+        "task": true
       }
     },
     "builder": {
-      "model": "<your-light-model>",
       "instructions": [
         ".docs/specs.md",
         ".docs/architecture/architecture.md",
@@ -95,7 +102,6 @@
       }
     },
     "code-reviewer": {
-      "model": "<your-heavy-model>",
       "instructions": [
         ".docs/specs.md",
         ".docs/architecture/architecture.md"
@@ -136,7 +142,6 @@
       }
     },
     "security-reviewer": {
-      "model": "<your-heavy-model>",
       "instructions": [
         ".docs/specs.md",
         ".docs/architecture/architecture.md",
@@ -173,6 +178,11 @@
         "skill": true,
         "task": false
       }
+    }
+  },
+  "mcp": {
+    "context7": {
+      "enabled": true
     }
   },
   "permission": {

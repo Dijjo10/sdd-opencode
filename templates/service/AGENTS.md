@@ -50,8 +50,11 @@ the current work.
 │   ├── infra/
 │   │   ├── server.md                      # eager: planner, builder
 │   │   └── ops.md                         # eager: planner only (lazy for builder)
+│   ├── findings/                          # lazy: raw framework findings log
+│   │   └── <framework>.md                 # append-only; see findings-workflow skill
 │   └── tasks/                             # lazy: navigate as workflow requires
-│       ├── tasks.md                       # macro-tasks index with status
+│       ├── tasks.md                       # macro-tasks index (grouped by state)
+│       ├── task-log.md                    # chronological append-only timeline
 │       ├── task-01-name.md                # ledger: Plan, Micro-tasks, Decisions, Logs
 │       ├── task-02-name.md                # one ledger file per macro-task
 │       └── ...
@@ -64,9 +67,9 @@ the current work.
 
 | File                                 | Purpose                                         |
 | ------------------------------------ | ----------------------------------------------- |
-| `../.docs/PDR.md`                    | Project requirements                            |
-| `../.docs/architecture.md`           | Cross-service architecture                      |
-| `../.docs/contracts/*`               | Service contracts (interfaces to others)        |
+| `../_project/.docs/PDR.md`                    | Project requirements                            |
+| `../_project/.docs/architecture.md`           | Cross-service architecture                      |
+| `../_project/.docs/contracts/*`               | Service contracts (interfaces to others)        |
 | `.docs/specs.md`                     | What this service does / does not do            |
 | `.docs/architecture/architecture.md` | Internal architecture                           |
 | `.docs/infra/server.md`              | Server, env, configuration                      |
@@ -79,6 +82,7 @@ the current work.
 | -------------------------------------- | ----------------------------------------------- |
 | `.docs/architecture/modules/*.md`      | Working on the corresponding module             |
 | `.docs/tasks/tasks.md`                 | Picking up work / checking macro-task state     |
+| `.docs/tasks/task-log.md`              | Chronological timeline of task events (append-only) |
 | `.docs/tasks/task-NN-*.md`             | Macro-task ledger: Plan, Micro-tasks, Decisions, Execution logs all in one |
 | `.docs/express-log.md`                 | Auditing recent quick fixes made in express mode |
 
@@ -125,14 +129,14 @@ relevant work.
 Switch primary agents with `Tab`. Subagents are invoked automatically by
 the builder; you can also invoke them manually with `@name` at any time.
 
-> **Note on agent naming**: the service-level `planner` and `builder`
-> are distinct from the project-level `planner-root` and `builder-root`
-> defined at the monorepo root. The names are intentionally different
-> to avoid namespace collisions when OpenCode merges agent definitions
-> across config layers. When working inside this service, you interact
-> with `planner` / `builder` (the service-level versions). When working
-> at the monorepo root for cross-service architecture or scaffolding,
-> the corresponding agents are `planner-root` / `builder-root`.
+> **Note on workspace separation**: this service is its own OpenCode
+> workspace. The project-level workspace (`_project/` in the monorepo)
+> has its own dedicated agent (`principal`) for cross-service concerns
+> (PDR, cross-service architecture, contracts, infrastructure,
+> project-wide scaffolding). This service workspace is independent —
+> you interact with `planner` / `builder` here without overlap. To
+> work on cross-service concerns, change directory to `_project/` and
+> launch a fresh OpenCode session there.
 
 ## Configuration sync
 
@@ -163,11 +167,11 @@ structures the agents fill at runtime when writing actual content
 (task entries, completion logs, decision records). They must remain
 in `<...>` form for the templates to function.
 
-**Models and permissions are NOT configured via this mechanism.**
-Models for each agent live in `opencode.json` under `agent.<name>.model`
-as `<your-heavy-model>` / `<your-light-model>` placeholders. You
-substitute them **manually** in `opencode.json`, once, after choosing
-your providers. They are not touched by the planner's configuration
+**Models are NOT configured via this mechanism.** Models for each
+agent are declared **once** in your global OpenCode config at
+`~/.config/opencode/opencode.json`, not in this project's
+`opencode.json`. This keeps personal model preferences out of the
+repository. They are not touched by the planner's configuration
 sync.
 
 ## Session behavior
@@ -325,6 +329,20 @@ action afterward.
 After the commit step, the session ends. **Do not start the next
 micro-task automatically** — open a fresh session for the next one.
 
+> **End-of-session commit gate (canonical).** This is the single
+> definition of the commit gate; agents reference it rather than restating
+> it. **No session that modified files ends without proposing a commit.**
+> Procedure: gather the files actually touched; build a Conventional
+> Commits message (`type(scope): summary`) with a footer referencing the
+> relevant `Task:`/`Micro-task:`/ledger; show the message and the files to
+> stage; wait for confirmation; on confirmation run `git add <files>`
+> (selective, never `-A`) and `git commit -m "<message>"`, then report the
+> hash; if the user declines, skip and leave the tree ready. Never
+> `git push`. This gate applies to every agent (`planner`, `builder`,
+> `principal`) and is most often skipped at two points: **after a
+> macro-task Plan is approved** (planning mode) and at the **end of
+> wrap-up** — do not skip it there.
+
 ### 10. Wrap-up mode (planner) — at macro-task completion
 
 When triage detects a macro-task with status `wrap-up-pending`, planner:
@@ -355,6 +373,33 @@ When triage detects a macro-task with status `wrap-up-pending`, planner:
 - Scans for residual dead code across the aggregate diff
 - Transitions macro-task status `wrap-up-pending → done`
 - Surfaces the next macro-task
+
+## UI work — mockups are the source of truth (frontend services only)
+
+> **Applies only if this service has a UI.** If the service is headless
+> (backend, worker, API-only), ignore this section entirely.
+
+For a frontend service, UI mockups are the highest-fidelity source of truth
+for anything visual. Before writing or planning code for a screen/view, the
+`planner` (detailing) and `builder` (implementation) **must**:
+
+1. Read `../_project/.docs/mockups/index.md` to locate the prototype for the
+   screen (the `principal` maintains this index).
+2. **If the screen isn't listed, do NOT conclude "no mockup"** — the UI may
+   be embedded in a related prototype (a form inside a wizard, a sheet inside
+   a list). Inspect adjacent flow prototypes before deciding one doesn't
+   exist.
+3. Load the **HTML prototype** — it is the richest source: exact copy,
+   spacing, sizes, border radius, colors, hierarchy, and interactions. Any
+   PNG is complementary and optional (the model may not read images).
+4. **Copy texts and labels verbatim.** Do not paraphrase, translate, or
+   "improve" them. Extract concrete values (text, font, spacing, sizes,
+   colors via the theme — not hard-coded) and apply them. The mockup always
+   wins.
+
+Skipping the mockup and inventing UI is a defect: it produces wrong copy,
+wrong spacing, and rework. Reading the prototype first is the cheapest path
+to a correct screen.
 
 ## Session discipline
 
@@ -508,7 +553,7 @@ the change to the relevant documentation in the same micro-task.
 | Behavior described in specs                         | `.docs/specs.md`                                  |
 | Configuration parameters, environment variables     | `.docs/infra/server.md`                           |
 | CI/CD pipeline changes                              | `.docs/infra/ops.md`                              |
-| Public service interface (request/response shape)   | `../.docs/contracts/*` — **flag only, do not modify** (see Boundaries) |
+| Public service interface (request/response shape)   | `../_project/.docs/contracts/*` — **flag only, do not modify** (see Boundaries) |
 
 ### How updates are enforced
 
@@ -530,8 +575,8 @@ service. Instead:
 - Flag the required change in the ledger's Emergent decisions section with a clear
   description
 - Stop and surface the issue to the user
-- The change is then handled from the project root in a separate session
-  (planner at project level updates `../.docs/contracts/*` and
+- The change is then handled from the `_project/` workspace in a separate session
+  (planner at project level updates `../_project/.docs/contracts/*` and
   coordinates impacted services)
 
 ## Handling significant changes
@@ -566,7 +611,7 @@ doc updates, refactor macro-task creation.
   past decisions. Enters refactor mode. Produces a dedicated
   `task-NN-refactor-<n>` macro-task.
 - **Wide**: service-level architecture, possibly cross-service. Must
-  start with a session from the project root to align the cross-service
+  start with a session from the `_project/` workspace to align the cross-service
   story before the service-level refactor proceeds.
 
 ### Convention: never delete history
@@ -685,6 +730,39 @@ in its review section. The user decides.
 - **Planner (wrap-up mode)**: surveys the macro-task aggregate diff for
   dead code patterns left across multiple micro-tasks
 
+## Conventions & findings — where lessons go
+
+When a lesson emerges (a recurring mistake, a discovered gotcha, a rule worth
+keeping), route it by its nature — **do not dump everything into this file**.
+Three destinations:
+
+1. **Universal SDD process lesson** (true for any project — e.g. "read the
+   mockup before UI code", "no wrap-up with red tests") → it belongs in the
+   **pattern itself** (the agent prompts / skills), not in a per-project
+   registry. Surface it so it can be upstreamed; don't record it here.
+2. **Project-specific *flow* convention** (a process rule peculiar to *this*
+   project, not tied to a framework) → **Project flow rules** below. Keep it
+   short.
+3. **Framework/library finding** (a `<stack-name>` gotcha, version bug,
+   workaround) → the **findings workflow**, never here. See the
+   `findings-workflow` skill: findings live in `.docs/findings/<framework>.md`
+   and, once recurring, in a `<framework>-findings` skill loaded on demand.
+
+The test: *is it framework-specific?* → findings skill. *Is it universal
+SDD?* → the pattern. *Only what's left* — project-level process discipline —
+lands in Project flow rules. This keeps `AGENTS.md` lean by construction.
+
+### Project flow rules
+
+Project-specific **process** conventions that are neither universal SDD rules
+nor framework-specific. Keep this short — if it grows, something in it is
+probably category 1 (upstream to the pattern) or category 3 (move to a
+findings skill).
+
+- FR-01 — <short title>: <the rule> (emerged in <session>)
+
+*(empty at bootstrap — expected to stay short)*
+
 ## File conventions & anti-bloat strategy
 
 This service maintains several incremental files. Each has a defined
@@ -694,8 +772,10 @@ strict templates; this section is the high-level reference.
 | File                                | Owner             | Growth strategy                                      |
 | ----------------------------------- | ----------------- | ---------------------------------------------------- |
 | `tasks.md`                          | planner           | Compact entries; completed go under `## Completed`   |
+| `task-log.md`                       | planner           | Append-only chronological timeline; `started` at planning, `wrapped up` at wrap-up. Never reorder/renumber |
 | `task-NN-<n>.md` (macro-task ledger)| planner + builder + reviewers | Single file with sections: Plan (immutable, 100-300 lines, planner-owned), Micro-tasks (planner-owned), Emergent decisions (lazy, planner+builder), Execution logs (append-only, builder+reviewers), Wrap-up (planner). Total file size grows with macro-task scope. If a single section grows excessively (e.g. Plan > 500 lines, Execution logs > 2000 lines), the macro-task is probably too big — split it. |
 | `.docs/security-issues.md`          | security-reviewer | Open + recently-closed only; archive older closed   |
+| `.docs/findings/<framework>.md`     | builder           | Append-only raw framework findings; promote to `<framework>-findings` skill at 2 hits. See `findings-workflow` skill |
 | `.docs/architecture/architecture.md`| planner           | Split into `modules/<x>.md` if > ~300 lines         |
 | `.docs/architecture/modules/<n>.md` | planner           | Created at wrap-up of macro-task introducing the module; updated at subsequent wrap-ups of macro-tasks touching it |
 | `.docs/express-log.md`              | builder           | Append-only, one line per fix. Archive older entries manually if needed |
@@ -705,7 +785,7 @@ suggestions (consolidate, split, archive) — never executes them silently.
 
 ## Boundaries
 
-- **Do not** modify project-level docs (`../.docs/*`) directly from this
+- **Do not** modify project-level docs (`../_project/.docs/*`) directly from this
   level. Cross-service changes must be flagged in the ledger's Emergent decisions section
   — see **Documentation sync rules → Cross-service changes** above.
 - **Do not** skip the planner → builder → review chain without explicit

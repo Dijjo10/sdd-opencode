@@ -9,12 +9,33 @@
 
 ## Status
 
-**Pattern proposal — v0.1, not yet battle-tested.**
+**Pattern proposal — v0.2, refined through real-project iteration.**
 
 The methodology, file structure, and agent prompts in this repo are
-documented and internally coherent, but have not been validated across
-multiple real-world projects. This is an honest starting point, not a
+documented and internally coherent. v0.2 folds in lessons from driving the
+pattern through a real multi-service project: most changes turned advisory
+steps into **verifiable gates**, moved framework knowledge into **on-demand
+skills**, and closed gaps the first version left open. It is still not
+validated across *many* projects — an honest, hardened starting point, not a
 finished product.
+
+What v0.2 added over v0.1:
+
+- **Adaptive triage / fast-path** — skip the full triage when a macro-task is
+  already in progress, going straight to the next micro-task
+- **Blocking wrap-up gates** — full test suite + a **CI gate** mirroring the
+  workflow yaml + a non-skippable aggregate review + a commit proposal, all
+  as exit preconditions (not skippable steps)
+- **End-of-session commit gate** — no session that touched files ends without
+  proposing a commit
+- **Context7 (live docs) mandatory** for planner/builder before writing
+  library-specific code — verify, don't guess
+- **Third-party APIs as source of truth** — a local `external-<provider>.yaml`
+  contract plus a mandatory fetch of the provider's live docs
+- **Mockups as source of truth** for frontend services (opt-in)
+- **Chronological task-log** decoupled from task numbering
+- **Dynamic findings** — a framework-findings workflow that captures recurring
+  gotchas and promotes them into on-demand skills
 
 Feedback, issues, and pull requests are very welcome. This pattern is
 meant to evolve based on real use — if you adopt it and hit rough
@@ -58,6 +79,10 @@ your stack and your LLM provider.
   - A heavy/reasoning model for `planner`, `code-reviewer`,
     `security-reviewer` — prioritize judgment quality
   - A light/fast model for `builder` — prioritize throughput
+- The **Context7 MCP** available in OpenCode (the templates enable it in
+  `opencode.json`) — agents use it to fetch live library docs before writing
+  library-specific code. If you don't want it, remove the `mcp.context7`
+  block; the Context7 guidance in the prompts then simply won't fire.
 - A monorepo layout works best, but the pattern adapts to single-service
   projects (see "Single-service projects" below)
 - Familiarity with OpenCode's agent, skill, and permission model
@@ -71,74 +96,105 @@ your stack and your LLM provider.
 
 ```
 your-project/
-├── AGENTS.md                    # from this repo (root AGENTS.md)
-├── opencode.json                # from this repo (root opencode.json)
-├── .opencode/
-│   ├── agents/
-│   │   ├── planner-root.md      # from this repo (root planner)
-│   │   └── builder-root.md      # from this repo (root builder, scaffolding only)
-│   └── skills/
-│       ├── analyst/SKILL.md
-│       └── architect-project/SKILL.md
-├── .docs/                       # to be populated by the analyst
-│   └── contracts/               # to be populated during architecture
-└── <service-dir>/               # one or more services
-    ├── AGENTS.md                # from this repo (service AGENTS.md)
-    ├── opencode.json            # from this repo (service opencode.json)
-    ├── .opencode/
-    │   ├── agents/
-    │   │   ├── planner.md
-    │   │   ├── builder.md
-    │   │   ├── code-reviewer.md
-    │   │   └── security-reviewer.md
-    │   └── skills/
-    │       ├── architect-service/SKILL.md
-    │       └── task-decomposition/SKILL.md
-    └── .docs/
+├── _project/                          # project workspace (separate OpenCode workspace)
+│   ├── AGENTS.md                      # from templates/_project/
+│   ├── opencode.json                  # from templates/_project/
+│   ├── .opencode/
+│   │   ├── agents/
+│   │   │   └── principal.md           # the project-level agent
+│   │   └── skills/
+│   │       ├── analyst/SKILL.md
+│   │       └── architect-project/SKILL.md
+│   └── .docs/                         # to be populated by the analyst
+│       └── contracts/                 # to be populated during architecture
+│
+├── <service-dir>/                     # one or more services (each is its own workspace)
+│   ├── AGENTS.md                      # from templates/service/
+│   ├── opencode.json                  # from templates/service/
+│   ├── .opencode/
+│   │   ├── agents/
+│   │   │   ├── planner.md
+│   │   │   ├── builder.md
+│   │   │   ├── code-reviewer.md
+│   │   │   └── security-reviewer.md
+│   │   └── skills/
+│   │       ├── architect-service/SKILL.md
+│   │       ├── task-decomposition/SKILL.md
+│   │       └── findings-workflow/SKILL.md
+│   ├── .docs/
+│   └── <source-tree>/
+│
+├── README.md                          # root README (edited from _project/)
+├── docker-compose.yaml                # root compose (edited from _project/)
+└── .github/workflows/                 # CI/CD (edited from _project/)
 ```
 
-### 2. Set your models in `opencode.json`
+**Note on workspaces**: OpenCode loads a single `opencode.json` per
+session. To keep project-level and service-level configurations
+isolated, each level is its own workspace:
 
-The **only manual customization** required before launching is setting
-the model identifiers in each `opencode.json` (root and each service).
-Open the file and replace `<your-heavy-model>` and `<your-light-model>`
-with your chosen model IDs:
+- Run `cd _project && opencode` for project-level work (PDR,
+  architecture, contracts, scaffolding)
+- Run `cd <service-dir> && opencode` for service-level work
+  (implementation, tests, internal architecture)
+
+The two workspaces communicate via files on disk (the cross-service
+docs and contracts produced in `_project/.docs/` are read by service
+workspaces when relevant).
+
+### 2. Set your models in your global OpenCode config
+
+The `opencode.json` files in this template **do not declare models**.
+Models are configured **once** in your personal global OpenCode config
+at `~/.config/opencode/opencode.json` (or `%APPDATA%\opencode\opencode.json`
+on Windows). This way:
+
+- Your model choice stays **out of the repo** — no risk of pushing
+  personal config or accidentally committing model preferences
+- Different team members can use different models on the same
+  project without touching the shared `opencode.json`
+- One change in the global config applies to all your SDD projects
+
+Add this to your global `~/.config/opencode/opencode.json`:
 
 ```json
 {
+  "$schema": "https://opencode.ai/config.json",
   "agent": {
-    "planner": { "model": "your-heavy-model-id", ... },
-    "builder": { "model": "your-light-model-id", ... },
-    "code-reviewer": { "model": "your-heavy-model-id", ... },
-    "security-reviewer": { "model": "your-heavy-model-id", ... }
+    "principal":         { "model": "your-heavy-model-id" },
+    "planner":           { "model": "your-heavy-model-id" },
+    "builder":           { "model": "your-light-model-id" },
+    "code-reviewer":     { "model": "your-heavy-model-id" },
+    "security-reviewer": { "model": "your-heavy-model-id" }
   }
 }
 ```
 
-OpenCode uses the format `provider/model-id`. Run `opencode models`
-to see what's available in your configuration.
+Replace `your-heavy-model-id` with a strong reasoning model and
+`your-light-model-id` with a fast/cheap model. OpenCode uses the
+format `provider/model-id` — run `opencode models` to see what's
+available in your installation.
 
-**All other placeholders** in `.md` files (service name, stack name,
-etc.) are handled **automatically** by the planner agent at the first
-session via its **configuration sync** procedure. You don't need to
-find-and-replace them manually.
+OpenCode merges the global config with the project's `opencode.json`,
+so models from your global config apply automatically to all the
+agents in this pattern.
 
-If your heavy/light model choice is stable across all your projects,
-you can declare it once in your global `~/.config/opencode/opencode.json`
-and remove the `model` field from per-project files (it'll fall back
-to global).
+**Other placeholders** in `.md` files (service name, stack name, etc.)
+are handled **automatically** by the planner/principal agent at the
+first session via the **configuration sync** procedure. You don't
+need to find-and-replace them manually.
 
 ### 3. Launch
 
-From project root:
+For project-level work (PDR, architecture, contracts, scaffolding):
 
 ```bash
-cd your-project
+cd your-project/_project
 opencode
 ```
 
-OpenCode starts in the `planner` agent by default. Say hi or type `go`
-— the planner runs configuration sync (substituting any unresolved
+OpenCode starts in the `principal` agent by default. Say hi or type
+`go` — the agent runs configuration sync (substituting any unresolved
 placeholders), then triages project state. For a fresh project, it
 will invoke the `analyst` skill to build the PDR.
 
@@ -149,26 +205,27 @@ cd your-project/<service-dir>
 opencode
 ```
 
+The service workspace starts in the `planner` agent by default.
+
 ---
 
 ## Pattern overview
 
 ### Agents
 
-The pattern uses two layers of agents — **project-level** at the
-monorepo root, **service-level** inside each service folder. Names
-are intentionally distinct (`-root` suffix at root) to avoid
-namespace collisions when OpenCode merges agent definitions across
-config layers.
+The pattern uses **two kinds of OpenCode workspaces** — project-level
+and service-level. Each is independent: its own `opencode.json`, its
+own agents, its own context. They communicate via files on disk
+(cross-service docs and contracts produced in the project workspace
+are read by service workspaces when relevant).
 
-**At project root** (when you run `opencode` from monorepo root):
+**In the project workspace** (when you run `opencode` from `_project/`):
 
-| Agent          | Type    | Model tier | Role                                                              |
-| -------------- | ------- | ---------- | ----------------------------------------------------------------- |
-| `planner-root` | primary | heavy      | PDR, cross-service architecture, infra, contracts                 |
-| `builder-root` | primary | light      | Project-level scaffolding only (CI/CD, root Dockerfile, etc.)     |
+| Agent          | Type    | Model tier | Role                                                                                |
+| -------------- | ------- | ---------- | ----------------------------------------------------------------------------------- |
+| `principal`    | primary | heavy      | PDR, cross-service architecture, contracts, infra, project-wide scaffolding (CI/CD, root Dockerfile, root README) |
 
-**Inside a service** (when you run `opencode` from a service folder):
+**In a service workspace** (when you run `opencode` from a service folder):
 
 | Agent               | Type    | Model tier | Role                                                          |
 | ------------------- | ------- | ---------- | ------------------------------------------------------------- |
@@ -180,37 +237,52 @@ config layers.
 Switch primary agents (planner ↔ builder) with `Tab`. Subagents are
 invoked by the builder explicitly when needed.
 
-> **Why the distinct names?** OpenCode merges agent definitions from
-> all `.opencode/agents/` directories along the path (root + service)
-> into a single namespace. If both root and service had agents named
-> `planner`, only one would be loaded — collision. The `-root` suffix
-> keeps them distinct so each level loads its intended agents.
+> **Why two workspaces?** OpenCode loads a single `opencode.json` per
+> session — the one in the directory where you launch `opencode`. It
+> does not merge nested configs. To keep project-level and
+> service-level concerns properly isolated (different agents,
+> different models, different context), each level is its own
+> workspace. The `_project/` folder is **not a service** — it's the
+> project workspace, sitting alongside the service folders.
 
 ### Workflow
+
+The diagram below shows the workflow **inside a service workspace**.
+The project workspace (`_project/`) is simpler: a single `principal`
+agent that handles requirements, architecture, contracts, and
+scaffolding — typically used at project setup, when adding a new
+service, or when a cross-service architectural change is needed.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  Session start → planner (default agent)                         │
 │  │                                                               │
-│  ├─ Configuration sync: resolve any unsubstituted placeholders   │
-│  ├─ Triage: assess state, detect next action                     │
+│  ├─ Fast-path: macro-task in progress? → jump to detailing       │
+│  │             (skip config sync / triage)                       │
+│  ├─ Else full triage: config sync (setup-phase) → assess state   │
 │  │                                                               │
 │  ├─ Setup mode      → architect-service skill → specs + arch    │
-│  ├─ Brownfield mode → adopt SDD on existing code                │
+│  │                    (+ mandatory .gitignore / bootstrap)       │
+│  ├─ Brownfield mode → architect-service (reverse-engineering)   │
 │  ├─ Architecture    → architect-service skill → Plan section    │
-│  ├─ Planning mode   → task-decomposition skill → Micro-tasks    │
-│  ├─ Detailing mode  → plan next micro-task in chat              │
-│  ├─ Wrap-up mode    → close macro-task: aggregate review,       │
-│  │                    full test suite, consolidate module docs  │
-│  ├─ Refactor mode   → user-triggered: scope change, impact,     │
-│  │                    create refactor task                       │
+│  ├─ Planning mode   → task-decomposition → Micro-tasks + log    │
+│  ├─ Detailing mode  → plan next micro-task in chat (+ mockup)   │
+│  ├─ Blocked resolve → verify & unblock blocked micro-tasks      │
+│  ├─ Wrap-up (GATE)  → aggregate review + full tests + CI gate   │
+│  │                    + commit — all as exit preconditions       │
+│  ├─ Refactor mode   → scope change, impact map, refactor task   │
 │  ├─ Express mode    → planner-gated trivial fix (typo, bump)    │
 │  │                                                               │
+│  │  Context7 + stack skill are mandatory before planning        │
+│  │  library-specific code. End-of-session commit gate applies.  │
 │  └─ Handoff to builder (Tab)                                    │
 │                                                                  │
 │  builder                                                         │
 │  │                                                               │
+│  ├─ Context7 + stack skill + <framework>-findings before coding │
 │  ├─ Implement micro-task + tests (module-scoped)                │
+│  ├─ Third-party API? → fetch live docs first (source of truth)  │
+│  ├─ Record framework gotchas → findings-workflow                │
 │  ├─ Write completion log + doc-sync declaration                  │
 │  ├─ Conditional: @security-reviewer if security-relevant        │
 │  ├─ On-demand: @code-reviewer when user asks                    │
@@ -223,13 +295,15 @@ invoked by the builder explicitly when needed.
 
 Skills encode **methodology**, loaded on-demand by agents:
 
-| Skill                         | Level   | When used                                     |
-| ----------------------------- | ------- | --------------------------------------------- |
-| `analyst`                     | root    | Eliciting project requirements (PDR)          |
-| `architect-project`           | root    | Designing cross-service architecture          |
-| `architect-service`           | service | Designing internal architecture (3 modes)     |
-| `task-decomposition`          | service | Breaking macro-tasks into atomic micro-tasks  |
-| `<stack-name>` (user-provided)| service | Stack-specific conventions (optional)         |
+| Skill                            | Level   | When used                                     |
+| -------------------------------- | ------- | --------------------------------------------- |
+| `analyst`                        | root    | Eliciting project requirements (PDR)          |
+| `architect-project`              | root    | Designing cross-service architecture + third-party contracts |
+| `architect-service`              | service | Designing internal architecture (3 modes) + brownfield reverse-engineering |
+| `task-decomposition`             | service | Breaking macro-tasks into atomic micro-tasks  |
+| `findings-workflow`              | service | Capturing recurring framework gotchas and promoting them into a findings skill |
+| `<stack-name>` (user-provided)   | service | Curated stack-specific conventions (optional) |
+| `<framework>-findings` (auto)    | service | Experiential findings for a framework, grown on the job, loaded on demand |
 
 ### Documentation structure
 
@@ -239,7 +313,12 @@ The `.docs/` directory holds project knowledge at two levels:
 - `PDR.md` — requirements
 - `architecture.md` — cross-service design
 - `infra.md` — environments, deployment
-- `contracts/*` — inter-service interface definitions
+- `contracts/openapi-<ms>.yaml` — inter-service interface definitions
+- `contracts/external-<provider>.yaml` — third-party API surfaces you depend
+  on (structural source of truth; the provider's live docs are the semantic
+  one)
+- `mockups/` + `mockups/index.md` — UI prototypes (only for projects with a
+  frontend; the source of truth for anything visual)
 
 **Service level (`<service-dir>/.docs/`)** — auto-loaded for service
 sessions, partitioned per agent (planner sees more, builder/reviewers
@@ -248,12 +327,15 @@ see less):
 - `architecture/architecture.md` + `modules/<n>.md` — internal design
 - `infra/server.md` + `infra/ops.md` — runtime and deployment
 - `security-issues.md` — service security registry
-- `tasks/tasks.md` — macro-tasks index
+- `findings/<framework>.md` — append-only raw log of framework gotchas
+- `tasks/tasks.md` — macro-tasks index (grouped by state)
+- `tasks/task-log.md` — chronological, append-only timeline of task events
+  (decoupled from the stable task numbering)
 - `tasks/task-NN-<n>.md` — single ledger per macro-task with Plan,
   Micro-tasks, Emergent decisions, Execution logs, Wrap-up sections
 
-Files frequently updated (task ledgers, decisions) are lazy-loaded —
-the agent reads them when navigation requires.
+Files frequently updated (task ledgers, decisions, findings) are lazy-loaded
+— the agent reads them when navigation requires.
 
 ### Operating modes
 
@@ -262,12 +344,13 @@ has a clear purpose:
 
 | Mode           | Trigger                                                | Output                                          |
 | -------------- | ------------------------------------------------------ | ----------------------------------------------- |
-| Setup          | Foundational docs missing                              | `specs.md` + `architecture.md`                  |
+| Fast-path      | A macro-task is already `in-progress` at session start | Skip triage, go straight to detailing next MT   |
+| Setup          | Foundational docs missing                              | `specs.md` + `architecture.md` + `.gitignore`   |
 | Brownfield     | User says "modalità adozione" / "brownfield"           | Baseline docs from existing code                |
 | Architecture   | New macro-task, no Plan section yet                    | Plan section of macro-task ledger               |
-| Planning       | Plan approved, no Micro-tasks section yet              | Micro-tasks section                             |
+| Planning       | Plan approved, no Micro-tasks section yet              | Micro-tasks section + `task-log` entry          |
 | Detailing      | Micro-task ready to start                              | Implementation plan in chat (not on disk)       |
-| Wrap-up        | All micro-tasks of a macro-task done                   | Aggregate review, full tests, module doc update |
+| Wrap-up (gate) | All micro-tasks of a macro-task done                   | Aggregate review + full tests + CI gate + commit — all as exit preconditions |
 | Refactor       | User says "refactor X" / significant pivot             | Impact report + new refactor macro-task         |
 | Express        | User says "quick fix" / "express", planner-gated       | Implementation + one line in `express-log.md`   |
 
@@ -299,9 +382,21 @@ Some non-obvious decisions baked into the pattern:
 - **Context partitioning per agent** — `opencode.json` declares
   `instructions` per-agent so the builder doesn't get saturated with
   PDR / contracts / security registries it doesn't need.
-- **Two-tier test policy** — module-scoped tests during each
-  micro-task, **mandatory full test suite** at wrap-up. Wrap-up is
-  blocked if the suite fails.
+- **Adaptive triage / fast-path** — when a macro-task is already in
+  progress, the planner skips configuration sync and the full triage and
+  goes straight to detailing the next micro-task, to save context budget.
+- **Wrap-up is a hard gate, not a checklist** — a macro-task cannot be
+  marked `done` unless its exit preconditions hold: the aggregate review
+  ran (section in the ledger), the **full test suite is green**, the **CI
+  gate** (checks derived from the workflow yaml) is green or CI is
+  undefined, and a **commit was proposed**. Two-tier tests still apply:
+  module-scoped during each micro-task, full suite at wrap-up.
+- **End-of-session commit gate** — no session that modified files ends
+  without proposing a commit; enforced at every agent, especially after a
+  Plan is approved and at wrap-up.
+- **Live docs over memory (Context7)** — the planner and builder must
+  consult Context7 before planning/writing library-specific code. Verify
+  the current API, don't guess from stale knowledge.
 - **Code review on-demand, security review automatic** — code-reviewer
   is invoked only when the user asks (or at wrap-up for aggregate
   review). Security-reviewer fires automatically when a micro-task is
@@ -311,13 +406,30 @@ Some non-obvious decisions baked into the pattern:
   wrap-up.
 - **Cross-service changes stop the service-level session** — when a
   change requires touching an inter-service contract, it must be
-  handled from project root.
+  handled from the `_project/` workspace.
 - **Brownfield-friendly** — adoption on existing codebase doesn't
   require rewriting docs. The planner has a dedicated brownfield mode
   that produces a baseline; module docs accumulate lazily.
 - **Significant changes have a dedicated flow** — refactor mode in 3
   phases (scoping, impact mapping, create refactor task). The refactor
   task's Plan section is the source of truth for target architecture.
+- **Third-party APIs are a tracked source of truth** — a dependency on an
+  external provider gets a local `external-<provider>.yaml` contract
+  (structural truth), and agents must fetch the provider's live docs before
+  coding against it (semantic truth). Working from memory on an external
+  surface is a known source of silent bugs.
+- **Mockups win for UI (frontend, opt-in)** — for services with a frontend,
+  the HTML mockup is the highest-fidelity source of truth; the builder reads
+  it before writing a screen and copies its copy/spacing/sizes verbatim.
+- **Stable task IDs, chronological log** — task numbers never change; a
+  separate append-only `task-log.md` records the real execution order, so
+  inserting an urgent `task-20` ahead of planned `15–19` doesn't scramble
+  history.
+- **Findings become skills** — recurring framework/library gotchas are
+  logged and, once they recur, promoted into an on-demand
+  `<framework>-findings` skill, so the builder stops re-hitting them.
+  Lessons route by a 3-way rule: universal → the pattern, project-flow →
+  `AGENTS.md`, framework → a findings skill (never all dumped in one place).
 - **History is preserved** — decisions, tasks, and execution logs are
   never deleted, only superseded.
 
@@ -419,6 +531,27 @@ default). If you use a different format (gRPC `.proto`, AsyncAPI,
 GraphQL SDL), update the `instructions` glob in `opencode.json` and
 adjust the `architect-project` skill's templates accordingly.
 
+Third-party APIs get their own `external-<provider>.yaml` contract, kept
+distinct from the inter-service `openapi-<ms>.yaml` files so it's obvious
+which interfaces you own versus depend on.
+
+### Frontend services and mockups
+
+If a service has a UI, drop your prototypes in `_project/.docs/mockups/`
+with an `index.md`, and load them into the frontend service's `planner`/
+`builder` `instructions`. The pattern treats the HTML mockup as the source
+of truth for screens; the "UI work" section in the service `AGENTS.md` is
+marked frontend-only and is ignored by headless services.
+
+### Framework findings (experiential knowledge)
+
+The `findings-workflow` skill defines how the builder captures recurring
+framework/library gotchas: they land in `.docs/findings/<framework>.md`,
+and once one recurs it is promoted into a `<framework>-findings` skill that
+loads on demand next to your curated `<stack-name>` skill. The curated skill
+plus Context7 always win on conflict — findings are experiential and can
+age. Consolidate a findings skill periodically to avoid bloat.
+
 ### Bootstrapping a new service in an existing monorepo
 
 When adding a new service to a project that's already using SDD:
@@ -462,17 +595,16 @@ sdd-opencode/
 ├── README.md                       # you are here
 ├── LICENSE
 ├── templates/
-│   ├── root/
+│   ├── _project/                   # template for the project workspace
 │   │   ├── AGENTS.md
 │   │   ├── opencode.json
 │   │   └── .opencode/
 │   │       ├── agents/
-│   │       │   ├── planner-root.md
-│   │       │   └── builder-root.md
+│   │       │   └── principal.md
 │   │       └── skills/
 │   │           ├── analyst/SKILL.md
 │   │           └── architect-project/SKILL.md
-│   └── service/
+│   └── service/                    # template for a service workspace
 │       ├── AGENTS.md
 │       ├── opencode.json
 │       └── .opencode/
@@ -483,7 +615,8 @@ sdd-opencode/
 │           │   └── security-reviewer.md
 │           └── skills/
 │               ├── architect-service/SKILL.md
-│               └── task-decomposition/SKILL.md
+│               ├── task-decomposition/SKILL.md
+│               └── findings-workflow/SKILL.md
 └── docs/
     └── examples/                   # (optional, future) example projects
 ```
@@ -521,6 +654,18 @@ Either (a) the change is genuinely non-trivial — go through normal
 flow, or (b) you want to escape SDD entirely for this change — use
 free mode (Tab directly to builder, give the instruction; the builder
 will detect free mode and ask explicit confirmation).
+
+**The agents keep saying they can't reach Context7.**
+The templates enable the Context7 MCP in `opencode.json`. If it isn't
+available in your OpenCode install, either add it, or remove the
+`mcp.context7` block — the prompts will still work, they just won't fetch
+live docs (falling back to the curated stack skill and your own review).
+
+**The builder isn't recording findings.**
+Findings are builder-owned and, like all gates here, are strong instructions
+rather than a technical enforcement. If they're being skipped, prompt the
+builder to follow the `findings-workflow` when it hits a framework issue; the
+mechanism is worth verifying on your first real project.
 
 **The pattern feels heavy for a tiny prototype.**
 It is. SDD is for serious projects. For prototypes and throwaway

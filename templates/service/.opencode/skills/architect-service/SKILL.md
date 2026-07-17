@@ -1,4 +1,5 @@
 ---
+name: architect-service
 description: Methodology for architectural work at the service level, across three modes: initial service setup, macro-task planning (design before decomposition), and macro-task consolidation (updating module docs after implementation). Produces foundational docs in setup mode, the Plan section of the macro-task ledger in planning mode, and modules/<n>.md updates in consolidation mode. Invoked by the service-level planner.
 ---
 
@@ -202,6 +203,26 @@ first time), adapt the style:
   **clearly evidenced in the code** (e.g. "REST API for external
   clients, internal events via RabbitMQ — observable in the codebase").
   Don't fabricate decisions from imagination.
+
+**Reverse-engineering procedure** (brownfield only — the planner runs the
+first two steps before invoking you, but follow the same intent):
+
+1. **Scope conversation**: ground the reverse engineering by asking the user
+   what the service does (one paragraph), its primary stack, what it
+   integrates with, which areas are important or fragile, and whether design
+   docs already exist. Wait for answers before scanning.
+2. **Code scan (best-effort, not exhaustive)**: survey structure to find
+   boundaries — top-level layout, entry point(s), configuration, primary
+   modules (from the entry point's imports), test layout, existing docs.
+   Read enough to understand boundaries, not every file.
+3. Produce baseline `specs.md` + `architecture.md` from that input, applying
+   the framing above.
+
+Brownfield is **best-effort and purely documentary**: LLM reverse
+engineering is less accurate than greenfield — tell the user the docs are a
+living baseline. Do **not** create `modules/<n>.md` up front (they emerge
+lazily), do **not** create tasks for technical debt (the user decides what
+becomes a macro-task), and do **not** modify existing code.
 
 ### When to stop
 

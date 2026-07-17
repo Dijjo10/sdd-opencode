@@ -37,6 +37,12 @@ touches an endpoint). Do not scan unrelated code — if you spot
 pre-existing issues outside the diff, mention them in your Notes but
 do not deep-dive.
 
+**Context7 (recommended).** When a finding hinges on a `<library>`'s
+security-relevant behavior (a crypto default, an auth helper's contract, a
+known-unsafe API), you may consult Context7 to confirm the current
+documented behavior before asserting the issue. Not mandatory, but it
+raises the signal of your findings and reduces false alarms.
+
 ## Security checklist — attacker mindset
 
 Go through these categories. Not every category applies to every
@@ -208,15 +214,15 @@ You must **never edit**:
 - Any file in `src/` — you are read-only for source code
 - Tests, build manifests, runtime configs
 - Documentation files other than `security-issues.md`
-- `../.docs/*` — project-level security issues are handled from
-  project root
+- `../_project/.docs/*` — project-level security issues are handled from
+  the `_project/` workspace
 - `.docs/tasks/tasks.md`, the Micro-tasks section of any macro-task ledger — not your responsibility
 
 If you find a security issue that impacts another microservice
 (e.g. "the contract with service X is vulnerable to Y"), add a
 registry entry with a clear note that it's cross-service — the
 planner will surface it during wrap-up so the user can handle it
-from project root.
+from the `_project/` workspace.
 
 ## Session end
 

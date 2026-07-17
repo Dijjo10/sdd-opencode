@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "planner-root",
+  "default_agent": "principal",
   "agent": {
     "build": {
       "disable": true
@@ -8,45 +8,12 @@
     "plan": {
       "disable": true
     },
-    "planner-root": {
-      "model": "<your-heavy-model>",
+    "principal": {
       "instructions": [
         ".docs/PDR.md",
         ".docs/architecture.md",
         ".docs/infra.md",
         ".docs/contracts/*.yaml"
-      ],
-      "permission": {
-        "edit": "ask",
-        "bash": {
-          "*": "ask",
-          "ls *": "allow",
-          "cat *": "allow",
-          "find *": "allow",
-          "grep *": "allow",
-          "head *": "allow",
-          "tail *": "allow",
-          "git status": "allow",
-          "git diff*": "allow",
-          "git log*": "allow"
-        }
-      },
-      "tools": {
-        "write": true,
-        "edit": true,
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "bash": true,
-        "skill": true,
-        "task": false
-      }
-    },
-    "builder-root": {
-      "model": "<your-light-model>",
-      "instructions": [
-        ".docs/architecture.md",
-        ".docs/infra.md"
       ],
       "permission": {
         "edit": "ask",
@@ -74,7 +41,10 @@
           "rm *": "ask",
           "sudo *": "ask",
           "curl *": "ask",
-          "wget *": "ask"
+          "wget *": "ask",
+          "docker compose config": "allow",
+          "yamllint *": "allow",
+          "shellcheck *": "allow"
         }
       },
       "tools": {
@@ -87,6 +57,11 @@
         "skill": true,
         "task": false
       }
+    }
+  },
+  "mcp": {
+    "context7": {
+      "enabled": true
     }
   },
   "permission": {

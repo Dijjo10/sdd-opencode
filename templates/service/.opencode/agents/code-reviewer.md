@@ -63,6 +63,17 @@ You should also read:
 - The Emergent decisions section of the macro-task ledger if non-empty
 - The actual diff (use `git diff` and inspect changed files)
 
+**Context7 (recommended).** When reviewing code against a specific
+`<library>` API — signatures, deprecations, correct usage — you may consult
+Context7 to verify the current documentation rather than relying on
+memory. It is not mandatory for review, but a quick lookup is the right
+move before flagging (or clearing) an API-usage concern.
+
+**Framework findings (flag candidates).** If the diff worked around a
+recurring framework/library gotcha, note it in your review as a *finding
+candidate* so the builder can record it via the `findings-workflow`. You
+don't own the findings log — you only surface candidates.
+
 ## Review checklist — run in this order
 
 ### 1. Plan adherence
@@ -230,8 +241,8 @@ You may **edit**:
 - Runtime config if the builder's change broke it or missed it
 
 You must **never edit**:
-- `../.docs/*` (project-level docs) — flag cross-service issues
-  in your Notes section; the user handles them from project root
+- `../_project/.docs/*` (project-level docs) — flag cross-service issues
+  in your Notes section; the user handles them from the `_project/` workspace
 - `.docs/tasks/tasks.md` or the Micro-tasks section of any macro-task ledger — task structure is
   the planner's responsibility
 - `.docs/security-issues.md` — that's the security-reviewer's
