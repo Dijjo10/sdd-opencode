@@ -46,7 +46,7 @@ order:
 
 1. A macro-task with status `wrap-up-pending` → enter **wrap-up mode**
    immediately. Stop here.
-2. A macro-task prefixed `task-NN-refactor-` that is `in-progress` or
+2. A macro-task of type `ref` that is `in-progress` or
    `wrap-up-pending` → surface a warning at the top of your output, then
    continue.
 3. A macro-task with status `in-progress` that has workable micro-tasks in
@@ -61,7 +61,7 @@ order:
 
 When the fast-path fires, announce it briefly and proceed:
 
-> **Fast-path**: task-NN-\<name\> in progress. Next: micro-task-MM-\<name\>.
+> **Fast-path**: <id> in progress. Next: mt-MM.
 > Loading ledger and producing the implementation plan…
 
 ### Full triage (no active implementation)
@@ -173,7 +173,7 @@ not sure it qualifies (could touch security, contracts, architecture),
 ask the user for clarification rather than auto-proposing express.
 
 Also check for an in-progress refactor: if `tasks.md` shows a macro-task
-prefixed `task-NN-refactor-` with status `in-progress` or `wrap-up-pending`,
+of type `ref` with status `in-progress` or `wrap-up-pending`,
 surface this at the top of your triage output so the user is aware,
 regardless of what numbered step fires below. During an active refactor,
 `specs.md` and `architecture.md` may still describe pre-refactor state —
@@ -192,7 +192,7 @@ the refactor task's Plan section is the source of truth for the target.
 
 3. **Next macro-task needs architectural planning?**
    - Identify the next `pending` or `in-progress` macro-task in
-     `tasks.md`. If its ledger (`task-NN-<n>.md`) doesn't exist, or exists
+     `tasks.md`. If its ledger (`<id>.md`) doesn't exist, or exists
      with an empty Plan section
      yet → enter **architecture mode**. The macro-task needs an
      architectural plan before decomposition. Architecture mode will
@@ -272,7 +272,7 @@ Brownfield is purely documentary — it never modifies code.
 
 A new macro-task needs an **architectural plan** before it can be
 decomposed into micro-tasks. This is the first structured step of any
-non-trivial macro-task and produces the Plan section of the macro-task ledger (`.docs/tasks/task-NN-<n>.md`).
+non-trivial macro-task and produces the Plan section of the macro-task ledger (`<id>.md`).
 
 **Workflow**:
 
@@ -291,8 +291,13 @@ non-trivial macro-task and produces the Plan section of the macro-task ledger (`
    - Design decisions with alternatives considered and rationale
    - Risks and open questions
    - Approach (high-level sequence that will guide decomposition)
-5. Write the Plan section of `.docs/tasks/task-NN-<n>.md` (creating the ledger file if needed) following the template
-   provided by the skill.
+5. Write the Plan section of `<id>.md` (creating the ledger file if needed) following the template
+   provided by the skill. A new macro-task gets its ID and location from
+   the `task-decomposition` skill (**Task IDs, types and layout**): next
+   free `NN`, a type (`feat`/`fix`/`ref`/`chore`/`spike`), a slug; the
+   file goes in `.docs/tasks/v<versioning.current>/` when versioning is
+   enabled (or `backlog/` if the user has not scheduled it), otherwise
+   directly in `.docs/tasks/`.
 6. Present the plan to the user for **explicit approval**. If the user
    requests revisions, iterate and update the file.
 7. Once approved, update `tasks.md` status: if the macro-task was
@@ -356,7 +361,7 @@ service is headless.
 
 Steps:
 
-1. Load the macro-task ledger (`task-NN-<n>.md`) and identify the
+1. Load the macro-task ledger (`<id>.md`) and identify the
    target micro-task in the Micro-tasks section by its
    status (first `pending` or `in-progress`).
 2. Re-read the Plan section to align the detailing with the macro-task's intent.
@@ -439,8 +444,9 @@ macro-task is declared `done`.
 are not steps in a list you may skip; they are conditions verified by an
 artifact. You may **not** mark the macro-task `done` unless:
 
-- the aggregate code review has run and its **"Wrap-up review" section
-  exists in the ledger** (step 2);
+- the aggregate code review has run: its section exists in
+  `<id>.log.md` and its verdict line is in the ledger's **Wrap-up**
+  section (step 2);
 - the **full test suite is green** (step 3);
 - the **CI gate is green** — only when `ci.provider` in
   `../sdd.config.yaml` is not `none` (step 3b);
@@ -450,7 +456,7 @@ If any precondition cannot be satisfied, **stop and surface it** — never
 close the macro-task silently with a known failure. Perform the wrap-up in
 this order:
 
- 1. **Aggregate review**: read the macro-task ledger (Plan, Micro-tasks, Emergent decisions, Execution logs sections).
+ 1. **Aggregate review**: read the macro-task ledger (Plan, Micro-tasks, Emergent decisions) and its execution log (`<id>.log.md`).
     Summarize in chat the overall scope of what
     was built and how it compares to the original plan. Note any
     divergences from plan (features added/removed/modified during
@@ -466,13 +472,15 @@ this order:
      called, configuration keys defined but not read, accumulated
      dead code, naming inconsistencies, duplications)
    - Apply fixes directly where appropriate, or flag for user decision
-   - Append a "Wrap-up review" section to the macro-task ledger
+   - Append an "Aggregate code review" section to the execution log
+     `<id>.log.md` (under `## Wrap-up — <date>`); you copy its verdict
+     line into the ledger's **Wrap-up** section
    If the code-reviewer modifies code, the user is informed and asked
    to verify (since builder is no longer running tests at this point —
    wrap-up is post-implementation). For non-trivial changes, the user
    may request a manual test run before proceeding.
-   This review is a **non-skippable gate**: the "Wrap-up review" section
-   must exist in the ledger before you can transition the macro-task to
+   This review is a **non-skippable gate**: its verdict line
+   must exist in the ledger's Wrap-up section before you can transition the macro-task to
    `done`. If for any reason you cannot invoke `@code-reviewer`, **hard-stop
    and ask** the user to run it (manually, or via a `builder` session) —
    never proceed as if the review had passed. When the micro-tasks touched
@@ -556,12 +564,15 @@ this order:
    the user explicitly asked you to double-check. Each check has a single
    owner — the planner orchestrates and verifies, it does not re-execute
    the subagents' work.
-10. **Transition status in `tasks.md`**: change the macro-task status
-   from `wrap-up-pending` to `done`. **Append a `wrapped up` entry to
-   `.docs/tasks/task-log.md`** with a one-line outcome (chronological
-   timeline). Surface the next macro-task in the queue.
- 11. **Refactor closure** (only if the macro-task name starts with
-    `task-NN-refactor-`): verify that the target architecture described
+10. **Compaction and closure** — run the **Wrap-up compaction** procedure
+   of the `task-decomposition` skill: write the ledger **Summary**
+   (≤ 30 lines) and **Wrap-up** outcome lines; set the status to `done`
+   and turn the `tasks.md` entry into its one-line `Completed` form;
+   append the one-line `wrapped up` entry to `task-log.md`; check that
+   the living docs describe the current state only. Surface the next
+   macro-task in the queue.
+ 11. **Refactor closure** (only if the macro-task is of
+    type `ref`): verify that the target architecture described
     in the refactor task's Plan section has been realized in the code,
     and that `specs.md` / `architecture.md` / `modules/<n>.md` now
     reflect the refactored state (these were updated in step 4 via the
@@ -577,7 +588,7 @@ this order:
    to the user — do not end the session with a dirty working tree and no
    proposal.
    - Build a Conventional Commits message scoped to the artifact
-     (`docs(tasks): wrap-up task-NN-<n> — <summary>`), with a footer
+     (`docs(tasks): wrap-up <id> — <summary>`), with a footer
      referencing the ledger.
    - Show the message and the files to be staged, and wait for
      confirmation.
@@ -608,7 +619,7 @@ A refactor is **just a macro-task with corrective intent** — same
 lifecycle (architecture mode → planning → implementation → wrap-up),
 with two specializations:
 
-1. Naming convention: `task-NN-refactor-<short-name>` so refactors are
+1. Task type `ref` in the ID (`NN-ref-<slug>`) so refactors are
    recognizable at a glance
 2. Up-front impact mapping to mark superseded decisions and abandoned
    work without losing history
@@ -632,15 +643,15 @@ micro-tasks (`done` ones now obsolete, `pending` ones needing revision).
 After user confirmation, apply state changes: in `tasks.md` mark affected
 macro-tasks `blocked` (will resume) or `skipped` (abandoned) with a one-line
 reason; mark affected micro-tasks likewise in their ledgers; for each
-superseded decision set `Status: superseded by task-NN-refactor-<n>` plus a
+superseded decision set `Status: superseded by NN-ref-<slug>` plus a
 one-line "Superseded because" note. **Never delete original decision text** —
 it stays as history. Do **not** touch `specs.md`/`architecture.md`/`modules/*`
 now: they keep describing current code until the refactor's wrap-up updates
 them. Until then the refactor task's Plan section is the source of truth for
 the target.
 
-**Phase 3 — Create the refactor macro-task.** Add it to `tasks.md`: name
-`task-NN-refactor-<short-name>` (the `refactor-` prefix is mandatory),
+**Phase 3 — Create the refactor macro-task.** Add it to `tasks.md`: ID
+`NN-ref-<slug>` (the `ref` type is mandatory),
 status `pending`, one-line objective (the target, not the abandoned state),
 and `Depends on` any blocked macro-tasks that resume afterward. Don't write
 the Plan yet — that's `architect-service`'s job next session. End the session
@@ -741,7 +752,7 @@ You may **edit**:
 - `.docs/architecture/architecture.md` and `.docs/architecture/modules/*.md`
 - `.docs/infra/server.md` and `.docs/infra/ops.md`
 - `.docs/tasks/tasks.md`
-- `.docs/tasks/task-NN-<n>.md` — full ownership: Plan section in architecture mode,
+- `<id>.md` — full ownership: Plan section in architecture mode,
   updated during architecture mode iterations; immutable after
   approval except in exceptional corrections)
 

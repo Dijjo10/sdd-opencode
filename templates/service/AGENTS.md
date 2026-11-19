@@ -61,16 +61,17 @@ the current work.
 │   │   └── modules/
 │   │       └── <module-name>.md           # lazy: read when working on module
 │   ├── infra/
-│   │   ├── server.md                      # eager: planner, builder
-│   │   └── ops.md                         # eager: planner only (lazy for builder)
+│   │   ├── server.md                      # mandatory read: planner, builder
+│   │   └── ops.md                         # read when touching deploy/ops
 │   ├── findings/                          # lazy: raw framework findings log
 │   │   └── <framework>.md                 # append-only; see findings-workflow skill
 │   └── tasks/                             # lazy: navigate as workflow requires
-│       ├── tasks.md                       # macro-tasks index (grouped by state)
-│       ├── task-log.md                    # chronological append-only timeline
-│       ├── task-01-name.md                # ledger: Plan, Micro-tasks, Decisions, Logs
-│       ├── task-02-name.md                # one ledger file per macro-task
-│       └── ...
+│       ├── tasks.md                       # macro-tasks index, one line each
+│       ├── task-log.md                    # chronological timeline, one line per event
+│       ├── v0.2/                          # version folder (only if versioning is on)
+│       │   ├── 03-feat-auth.md            # ledger: Summary, Plan, Micro-tasks, ED, Wrap-up
+│       │   └── 03-feat-auth.log.md        # execution log (read at wrap-up only)
+│       └── backlog/                       # macro-tasks not assigned to a version
 └── <source-tree>/                         # service code (layout depends on stack)
 ```
 
@@ -105,7 +106,8 @@ reads these with its read tools at session/task start, per the
 | `.docs/architecture/modules/*.md`      | Working on the corresponding module             |
 | `.docs/tasks/tasks.md`                 | Picking up work / checking macro-task state     |
 | `.docs/tasks/task-log.md`              | Chronological timeline of task events (append-only) |
-| `.docs/tasks/task-NN-*.md`             | Macro-task ledger: Plan, Micro-tasks, Decisions, Execution logs all in one |
+| `.docs/tasks/[v<x.y>/]<id>.md`          | Macro-task ledger: Summary, Plan, Micro-tasks, Emergent decisions, Wrap-up |
+| `.docs/tasks/[v<x.y>/]<id>.log.md`      | Execution log of the macro-task — append-only; read at wrap-up only |
 | `.docs/express-log.md`                 | Auditing recent quick fixes made in express mode |
 
 > **Never load whole contracts.** A single `external-<provider>.yaml`
@@ -272,7 +274,7 @@ architectural plan. The planner enters architecture mode and:
 - Works with the user conversationally to define objective, scope,
   module/feature architecture, design decisions (with alternatives
   and rationale), risks, and approach
-- Produces the Plan section of `.docs/tasks/task-NN-<n>.md` (creating the ledger if needed)
+- Produces the Plan section of `<id>.md` (creating the ledger if needed)
 - Waits for explicit user approval
 
 Architecture mode typically **chains directly into planning mode** in
@@ -283,7 +285,7 @@ without context switching.
 
 With the Plan approved, the planner invokes `task-decomposition`
 skill to break the macro-task into atomic micro-tasks in
-the Micro-tasks section of `task-NN-<n>.md`. Each micro-task is tagged with
+the Micro-tasks section of `<id>.md`. Each micro-task is tagged with
 `security-relevant: true|false` and includes objective, acceptance
 criteria, required tests, and likely impacted files.
 
@@ -315,8 +317,8 @@ User switches to `builder`. Builder:
   field. Full suite runs at wrap-up, not per-micro-task.
 - Applies any documentation updates triggered by the change
   (see **Documentation sync rules** below)
-- Appends a **completion log** subsection to the Execution logs section
-  of `task-NN-<n>.md`, documenting the test subset that was run
+- Appends a **completion log** (≤ 15 lines) to the execution log
+  `<id>.log.md`, documenting the test subset that was run
 
 ### 7. Review chain (builder → subagents)
 
@@ -326,16 +328,16 @@ When builder has finished the implementation and completion log:
   announces: "Micro-task is security-relevant. Invoking
   @security-reviewer. Interrupt to skip." Then invokes
   `@security-reviewer`, which runs read-only analysis, appends a
-  **security review** subsection within the current micro-task's
-  Execution log, and updates `.docs/security-issues.md` if new issues
+  **security review** subsection to the current micro-task's block in
+  the execution log `<id>.log.md`, and updates `.docs/security-issues.md` if new issues
   are found.
 - **Code review is on demand**: per-micro-task code review is **not
   invoked automatically** — with passing tests, forward progress is
   preferred. The user can request it at any time ("run code review")
   or invoke `@code-reviewer` directly; the code-reviewer reviews diff +
   plan adherence, applies fixes directly to code and docs, and appends
-  a **review changes** subsection within the current micro-task's
-  Execution log.
+  a **review changes** subsection to the current micro-task's block in
+  the execution log `<id>.log.md`.
 - Aggregate code quality is reviewed **at the macro-task wrap-up**
   (mandatory — see step 10).
 
@@ -390,7 +392,8 @@ micro-task automatically** — open a fresh session for the next one.
 
 When triage detects a macro-task with status `wrap-up-pending`, planner:
 
-- Reads the macro-task ledger (Plan + Execution logs) to
+- Reads the macro-task ledger (Plan, Micro-tasks, Emergent decisions)
+  and its execution log `<id>.log.md` to
   build an aggregate view of what was built vs what was planned
 - Invokes `@code-reviewer` in **aggregate wrap-up mode** to review
   the cumulative diff of the entire macro-task — catches cross-cutting
@@ -528,7 +531,7 @@ before proceeding.
 ### What express mode does NOT produce
 
 - No entry in any Micro-tasks section
-- No subsection in any Execution logs section
+- No entry in any execution log
 - No Emergent decisions entry
 - No status change in `tasks.md`
 - No security-review (by constraint, express excludes security-relevant
@@ -606,6 +609,13 @@ Documentation is **source of truth** and must stay aligned with the code
 at all times. Every agent that modifies code is responsible for propagating
 the change to the relevant documentation in the same micro-task.
 
+**Living docs describe the current state only.** `specs.md`,
+`architecture.md`, `modules/*.md` and `infra/*` say what the service *is*,
+not how it got there: rewrite the affected passage instead of appending
+"changed in task NN" notes or keeping superseded alternatives. History
+lives in the ledgers; a living doc may point to one ledger, once, when the
+reason behind a choice matters.
+
 ### Triggers — when to update what
 
 | If the change introduces/modifies…                  | Update…                                           |
@@ -673,7 +683,7 @@ doc updates, refactor macro-task creation.
   by re-planning the affected macro-task. No formal refactor mode.
 - **Medium**: one or more modules inside this service, invalidates
   past decisions. Enters refactor mode. Produces a dedicated
-  `task-NN-refactor-<n>` macro-task.
+  macro-task of type `ref` (e.g. `07-ref-persistence`).
 - **Wide**: service-level architecture, possibly cross-service. Must
   start with a session from the `_project/` workspace to align the cross-service
   story before the service-level refactor proceeds.
@@ -699,7 +709,7 @@ months can reconstruct what was decided when and why it changed.
 A refactor is **a macro-task with corrective intent**. Same lifecycle as
 any other macro-task (architecture mode → planning → implementation →
 wrap-up), with two specializations: naming convention
-(`task-NN-refactor-<n>`) and an up-front impact mapping phase that
+(type `ref` in the task ID) and an up-front impact mapping phase that
 marks superseded decisions and abandoned work without losing history.
 
 While the refactor task is active, its Plan section (in the macro-task
@@ -756,7 +766,7 @@ Examples:
 
 - `SDD-KEEP: backward compat for v1 API, remove after v2 migration (see task-12 ledger, ED-07)`
 - `SDD-KEEP: feature-flagged, activated by FEATURE_X (see specs.md)`
-- `SDD-KEEP: temporary parallel impl during migration to NewService, remove in task-NN`
+- `SDD-KEEP: temporary parallel impl during migration to NewService, remove in 12-ref-services`
 
 The marker must include a **reason** and a **reference** to a doc or
 task that justifies the retention. A naked `SDD-KEEP` with no reason is
@@ -835,9 +845,10 @@ strict templates; this section is the high-level reference.
 
 | File                                | Owner             | Growth strategy                                      |
 | ----------------------------------- | ----------------- | ---------------------------------------------------- |
-| `tasks.md`                          | planner           | Compact entries; completed go under `## Completed`   |
-| `task-log.md`                       | planner           | Append-only chronological timeline; `started` at planning, `wrapped up` at wrap-up. Never reorder/renumber |
-| `task-NN-<n>.md` (macro-task ledger)| planner + builder + reviewers | Single file with sections: Plan (immutable, 100-300 lines, planner-owned), Micro-tasks (planner-owned), Emergent decisions (lazy, planner+builder), Execution logs (append-only, builder+reviewers), Wrap-up (planner). Total file size grows with macro-task scope. If a single section grows excessively (e.g. Plan > 500 lines, Execution logs > 2000 lines), the macro-task is probably too big — split it. |
+| `tasks.md`                          | planner           | **One line per macro-task** in every section; details live in the ledger |
+| `task-log.md`                       | planner           | Append-only timeline, one line (≤ 200 chars) per event; never reorder |
+| `<id>.md` (macro-task ledger)       | planner (+ builder for ED entries) | Summary (≤ 30 lines, at wrap-up), Plan (immutable, 100-300 lines), Micro-tasks, Emergent decisions (≤ 10 lines each), Wrap-up (outcome lines). Read at detailing and wrap-up |
+| `<id>.log.md` (execution log)       | builder + reviewers | Append-only. Completion log ≤ 15 lines; a clean review is one line. Read only at wrap-up (and for dependencies at detailing) |
 | `.docs/security-issues.md`          | security-reviewer | Open + recently-closed only; archive older closed   |
 | `.docs/findings/<framework>.md`     | builder           | Append-only raw framework findings; promote to `<framework>-findings` skill at 2 hits. See `findings-workflow` skill |
 | `.docs/architecture/architecture.md`| planner           | Split into `modules/<x>.md` if > ~300 lines         |

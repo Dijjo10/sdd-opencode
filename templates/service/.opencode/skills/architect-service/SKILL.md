@@ -242,7 +242,7 @@ Setup is complete when:
 ## Mode 2 — macro-task-planning
 
 Activated when the planner enters **architecture mode** for a new
-macro-task (status `pending`, ledger `task-NN-<n>.md` does not exist yet, or exists with empty Plan section).
+macro-task (status `pending`, ledger `<id>.md` does not exist yet, or exists with empty Plan section).
 
 ### Input
 
@@ -254,13 +254,13 @@ macro-task (status `pending`, ledger `task-NN-<n>.md` does not exist yet, or exi
 
 ### What you produce
 
-**The Plan section** of the macro-task ledger: `.docs/tasks/task-NN-<n>.md`. The ledger file is created if it doesn't exist; if it exists with an empty Plan section, the section is filled.
+**The Plan section** of the macro-task ledger: `<id>.md`. The ledger file is created if it doesn't exist; if it exists with an empty Plan section, the section is filled.
 
 This file captures the architectural intent of the macro-task before
 decomposition. It is the answer to "how are we going to build this?".
 
 ````markdown
-# Plan — task-NN-<n>
+# Plan — <id>
 
 > Architectural plan for this macro-task, produced before decomposition
 > into micro-tasks. Captures intent, design decisions, and approach.
@@ -392,7 +392,7 @@ stable documentation.
 ### Input
 
 - The Plan section of the macro-task ledger (architectural intent)
-- The Execution logs section of the ledger (completion logs of all
+- The execution log `<id>.log.md` (completion logs of all
   micro-tasks of the macro-task)
 - The Emergent decisions section of the ledger if non-empty (emergent decisions surfaced
   during detailing and implementation — may differ from or refine
@@ -438,7 +438,7 @@ Updates or creations in `.docs/architecture/`:
 
 <Stable decisions promoted from the macro-task's Plan section. Use the
 same format as architectural decisions in architecture.md.
-Reference `.docs/tasks/task-NN-<n>.md` (Plan section) for full context.>
+Reference `<id>.md` (Plan section) for full context.>
 
 ## 7. Known limitations
 
@@ -446,7 +446,7 @@ Reference `.docs/tasks/task-NN-<n>.md` (Plan section) for full context.>
 
 ## 8. Changelog
 
-- <date>: created during task-NN-<n>
+- <date>: created during <id>
 ````
 
 **Updated `modules/<n>.md`** if the macro-task modified existing
@@ -488,7 +488,7 @@ globally. Add a changelog entry.
 ### Style in macro-task-consolidation mode
 
 - **Promote, don't invent**. Everything you write should trace back
-  to the Plan, completion logs (Execution logs section), or actual code. Don't invent
+  to the Plan, completion logs (execution log), or actual code. Don't invent
   architecture that wasn't there.
 - **Stability over completeness**. Document what's stable. Things
   still in flux (TODO comments, known issues) belong in "Known
@@ -510,8 +510,8 @@ Consolidation is complete when:
 
 ## Updating architecture during a refactor
 
-A refactor is a macro-task with corrective intent (name prefixed
-`task-NN-refactor-`). When you're invoked for a refactor task, you
+A refactor is a macro-task with corrective intent (type `ref`, e.g.
+`07-ref-persistence`). When you're invoked for a refactor task, you
 operate in the **same three modes** as for any macro-task:
 
 - **Mode 2 (macro-task-planning)**: write the Plan section of the
@@ -536,9 +536,9 @@ When operating in Mode 3 (consolidation) for a refactor:
   refactor task's Plan section, not in the architecture doc itself.
 - **Changelog entry**. In the `Changelog` section of `specs.md` or
   `architecture.md`, add an entry like:
-  `- <date>: architecture updated for refactor task-NN-refactor-<n>`.
+  `- <date>: architecture updated for refactor <id>`.
 - **Modules may be created or removed**. If the refactor introduced
   a new module boundary, create its `modules/<n>.md` reflecting the
   current implementation. If the refactor eliminated a module,
   delete its `modules/<n>.md` — the file is no longer relevant. The
-  history is in the refactor task's Plan section and Execution logs.
+  history is in the refactor task's Plan section and execution log.

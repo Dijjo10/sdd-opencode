@@ -206,7 +206,7 @@ or seems to require context you don't have, ask before reading files.
 
 Execute the implementation plan step by step:
 
-1. **Mark the micro-task as `in-progress`** in the macro-task ledger's Micro-tasks section (`task-NN-<n>.md`) to
+1. **Mark the micro-task as `in-progress`** in the macro-task ledger's Micro-tasks section (`<id>.md`) to
    signal that work has started. This makes the state visible if the
    session is interrupted.
 2. **Read current state** of files you'll modify (even if mentioned in
@@ -381,13 +381,17 @@ For these, either:
 
 ## Completion log
 
-When implementation is complete, append your section to
-the Execution logs section of the macro-task ledger (`task-NN-<n>.md`), under a new subsection for this micro-task. Append (don't overwrite) — multiple sub-headings (Completion log, Security review, Code review) may accumulate
-missing). Use this exact template — no narrative prose, no extra
-sections.
+When implementation is complete, append your completion log to the
+execution log `<id>.log.md` (create the file if this is the first
+micro-task). Open a block `## mt-NN — <YYYY-MM-DD>` for this micro-task;
+the reviewers will add their `###` subsections under the same block.
+Append, never overwrite. Use this exact template — **≤ 15 lines, no
+narrative prose, no extra sections**.
 
 ```markdown
-## Completion log (builder)
+## mt-NN — <YYYY-MM-DD>
+
+### Completion log (builder)
 
 **Status**: completed | partial | blocked
 **Files touched**:
@@ -490,9 +494,8 @@ active macro-task: are all micro-tasks now `done` (including this one)?
 - If **no** (other micro-tasks still `pending` or `in-progress`):
   proceed to Step 6 as usual.
 - If **yes** (this was the last one): open
-  `.docs/tasks/tasks.md` and transition the macro-task status to
-  `wrap-up-pending`. Add a one-line marker such as
-  `(last micro-task completed <date>, awaiting planner wrap-up)`.
+  `.docs/tasks/tasks.md` and change the status in the macro-task's
+  line to `wrap-up-pending` (the line stays one line).
   This is a deterministic signal to the next planner session that
   wrap-up mode must run before any further work proceeds.
 
@@ -511,6 +514,10 @@ marked `wrap-up-pending`, propose a git commit to the user.
   log's "Files touched" field plus any files modified by reviewers
   (read the "Changes applied" section of the code-reviewer log, and
   the "Registry updates" of the security-reviewer if present).
+- Add the task bookkeeping of this micro-task: the ledger `<id>.md`
+  (status change, ED entries), `<id>.log.md`, and `tasks.md` if you
+  changed it. They go in **this** commit — never in a separate
+  "docs(tasks): sync" commit.
 - Verify against the actual working directory with `git status` — flag
   any files that are modified but not in the expected list (they may
   be stray edits and should be excluded or investigated).
@@ -525,8 +532,8 @@ Use **Conventional Commits** format with a task footer. Structure:
 <optional body: acceptance criteria met, notable decisions,
 or brief rationale — only if it adds value over the summary>
 
-Task: task-NN-<name>
-Micro-task: micro-task-NN-<name>
+Task: <id>
+Micro-task: mt-NN
 ```
 
 Type selection:
@@ -564,14 +571,15 @@ to be staged:
 >
 > Tests: 8 unit tests added.
 >
-> Task: task-03-auth-module
-> Micro-task: micro-task-01-jwt-validator
+> Task: 03-feat-auth
+> Micro-task: mt-01
 > ```
 >
 > Files to stage:
 > - src/auth/JwtValidator.java
 > - src/auth/JwtValidatorTest.java
-> - .docs/tasks/task-03-auth-module.md
+> - .docs/tasks/v0.2/03-feat-auth.md
+> - .docs/tasks/v0.2/03-feat-auth.log.md
 >
 > Confirm to commit, or let me know if you want to adjust the message
 > or skip the commit (you can commit manually afterward).
@@ -597,7 +605,7 @@ macro-task wrap-up, run by the planner through the `git-workflow` skill.
 ### Step 7 — Final summary and stop
 
 Output a brief final summary:
-- Micro-task: <NN-name>
+- Micro-task: <id>/mt-NN
 - Status: done
 - Security review: <result if security-relevant, "not applicable" otherwise>
 - Code review: <"on-demand, not invoked" by default, or result if user requested it>
@@ -695,7 +703,7 @@ normal micro-task.
 
 ### What express mode does NOT do
 
-- No subsection in any macro-task ledger Execution logs
+- No entry in any execution log
 - No entry in any Micro-tasks section
 - No status transition in `tasks.md`
 - No security review
@@ -785,8 +793,8 @@ You may **edit**:
 - `AGENTS.md` (Tech stack section) when doc-sync triggers apply
 - `.docs/specs.md`, `.docs/architecture/**`, `.docs/infra/**` when
   doc-sync triggers apply
-- The Execution logs section of `.docs/tasks/task-NN-<n>.md` (the macro-task ledger), specifically the subsection for the current micro-task — append your Completion log block; never modify other agents' blocks
-- The Emergent decisions section of `.docs/tasks/task-NN-<n>.md` — append-only, to
+- The execution log `<id>.log.md`, specifically the subsection for the current micro-task — append your Completion log block; never modify other agents' blocks
+- The Emergent decisions section of `<id>.md` — append-only, to
   record emergent decisions that surfaced during implementation:
   workarounds adopted, plan assumptions that turned out wrong, scope
   discoveries, library limitations, cross-service flags. Create the
@@ -796,7 +804,7 @@ You may **edit**:
   the Plan itself should be revised, stop and surface this to the
   user rather than proceeding with a contradicting Emergent decisions
   entry.
-- The Micro-tasks section of `.docs/tasks/task-NN-<n>.md` **only** to update the
+- The Micro-tasks section of `<id>.md` **only** to update the
   status of the current micro-task (pending → in-progress → done).
   Never modify other aspects (objectives, acceptance criteria, flags)
   — those are the planner's responsibility.

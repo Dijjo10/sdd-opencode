@@ -1,18 +1,20 @@
 ---
 name: task-decomposition
-description: Methodology for breaking macro-tasks into atomic micro-tasks. Use this skill when a macro-task is ready to be broken down (the macro-task ledger task-NN-<n>.md exists with an approved Plan section but no Micro-tasks section yet), when revising an existing decomposition, or when creating/updating the service's tasks.md index. Enforces atomicity, testability, and the security-relevant flag for downstream review routing. Operates on the consolidated macro-task ledger (single file per macro-task, sections: Plan, Micro-tasks, Emergent decisions, Execution logs, Wrap-up).
+description: Methodology for breaking macro-tasks into atomic micro-tasks and for keeping the task files small. Use this skill when a macro-task is ready to be broken down (its ledger exists with an approved Plan section but no Micro-tasks section yet), when revising a decomposition, when creating or updating tasks.md / task-log.md, and at wrap-up for the compaction step. Defines task IDs and types, the version folder layout, the ledger + execution log pair, and the size budgets.
 ---
 
 # Task-Decomposition — From Macro to Micro
 
 You are in **task-decomposition mode**. Your job is to decompose a macro-
 task into atomic micro-tasks and to maintain the task documentation
-files. The pattern uses **two artifacts**:
+files. Every macro-task has **two files**, plus two service-wide indexes:
 
-- `.docs/tasks/tasks.md` — index of macro-tasks across the service
-- `.docs/tasks/task-NN-<n>.md` — single ledger per macro-task,
-  containing Plan, Micro-tasks, Emergent decisions, Execution logs,
-  and Wrap-up sections in one file
+- `.docs/tasks/tasks.md` — index of macro-tasks, one line each
+- `.docs/tasks/task-log.md` — chronological timeline, one line per event
+- `<id>.md` — the **ledger**: Summary, Plan, Micro-tasks, Emergent
+  decisions, Wrap-up. Small, read often.
+- `<id>.log.md` — the **execution log**: completion logs and review
+  outputs, append-only. Large, read rarely.
 
 Decomposition operates on the macro-task ledger: it reads the Plan
 section (already written) and produces the Micro-tasks section.
@@ -20,7 +22,7 @@ section (already written) and produces the Micro-tasks section.
 ## Operating principles
 
 1. **Start from the plan**. Every macro-task has an approved Plan
-   section in its ledger (`task-NN-<n>.md`), written by the
+   section in its ledger (`<id>.md`), written by the
    architect-service skill in macro-task planning mode. Read it first
    — it contains the objective, scope, architecture, design decisions,
    and approach. Decomposition realizes that plan step by step. Do not
@@ -134,336 +136,318 @@ micro-task of a macro, it sets the macro-task status to
 during triage and enters wrap-up mode immediately. Once the planner
 finishes the wrap-up cycle, the macro-task transitions to `done`.
 
-## Naming convention for refactor macro-tasks
+## Task IDs, types and layout
 
-When a macro-task exists to carry out a refactor (typically created by
-the planner in refactor mode), use the prefix:
+### Macro-task ID
 
 ```
-task-NN-refactor-<short-name>
+<NN>[<letter>]-<type>-<slug>        e.g. 03-feat-auth, 12b-fix-token-refresh
 ```
 
-Example: `task-07-refactor-persistence-layer`.
+- **`NN`** — two digits, sequential **per service**, never reused and
+  never renumbered (a stable identifier, not an execution order; the
+  real order lives in `task-log.md`). Numbering does not restart per
+  version, so a macro-task can move to another version without
+  changing its ID.
+- **`<letter>`** (optional) — a follow-up or insertion tied to an
+  existing task: `12b` hardens or completes `12`. Use it only when the
+  link to the parent matters; otherwise take the next `NN`.
+- **`<type>`** — one of:
 
-The `refactor` prefix makes these tasks recognizable at a glance in
-`tasks.md`, which matters because they have special semantics:
+  | Type | Use for | Commit type |
+  | ---- | ------- | ----------- |
+  | `feat` | new behavior | `feat` |
+  | `fix` | a bug that needs planning (trivial fixes go to express mode) | `fix` |
+  | `ref` | refactor created to change direction (see below) | `refactor` |
+  | `chore` | tooling, dependencies, infra, docs-only work | `chore` / `build` / `docs` |
+  | `spike` | time-boxed investigation; output is knowledge, not shippable code | `chore` |
 
-- They invalidate or supersede earlier decisions — a reader should
-  know immediately that this task was corrective, not greenfield
-- They often introduce `SDD-KEEP` markers for staged migrations that
-  reference the closure of this specific task
-- Their Plan section is the source of truth for the target architecture
-  until the wrap-up updates `specs.md`/`architecture.md`/`modules/*.md`
-  to reflect the refactored code
+- **`<slug>`** — 2-4 lowercase words, dash-separated.
 
-Non-refactor macro-tasks should not use the `refactor-` prefix even
-if they happen to touch existing code — reserve the prefix for work
-that was created specifically to change direction.
+The type also names the branch (`git-workflow` skill):
+`<type>/[v<x.y>-]<NN[letter]>-<slug>`, e.g. `feat/v0.2-03-auth`.
+
+**`ref` macro-tasks** have special semantics: they invalidate or
+supersede earlier decisions, often introduce `SDD-KEEP` markers for
+staged migrations, and their Plan section is the source of truth for the
+target architecture until the wrap-up updates `specs.md` /
+`architecture.md` / `modules/*.md`. Use `ref` only for work created
+specifically to change direction — not for any task that happens to
+touch existing code.
+
+### Micro-task ID
+
+`mt-NN` inside its macro-task (`mt-01`, `mt-02`). A micro-task split or
+inserted later takes a letter: `mt-03a`, `mt-03b`. Never renumber.
+References from outside the ledger use `<macro-id>/mt-NN`
+(e.g. `03-feat-auth/mt-02`).
+
+### Folder layout
+
+```
+.docs/tasks/
+├── tasks.md                 # index, one line per macro-task
+├── task-log.md              # timeline, one line per event
+├── v0.2/                    # only when versioning.enabled: true
+│   ├── 03-feat-auth.md      # ledger
+│   ├── 03-feat-auth.log.md  # execution log
+│   └── 04-ref-persistence.md
+└── backlog/                 # macro-tasks not yet assigned to a version
+```
+
+- `versioning.enabled: true` (in `../sdd.config.yaml`): each macro-task
+  lives in the folder of the version it ships in, `v<major>.<minor>/`.
+  Unscheduled ideas live in `backlog/`. Moving a macro-task to another
+  version = moving its two files; the ID does not change.
+- `versioning.enabled: false` or no config: the files live directly in
+  `.docs/tasks/`.
 
 ## Output artifacts
 
-The pattern uses **three artifacts** for tracking macro and micro tasks:
+### Size budgets
 
-1. **`.docs/tasks/tasks.md`** — index of macro-tasks at service level,
-   grouped by *state* (Active/Blocked/Skipped/Completed)
-2. **`.docs/tasks/task-NN-<name>.md`** — single ledger file per
-   macro-task, containing plan, micro-tasks, decisions, and execution
-   logs all in one place
-3. **`.docs/tasks/task-log.md`** — append-only *chronological* timeline of
-   task events (started / wrapped-up), decoupled from the numbering
+The task files are read by agents in every session. Their size is a
+direct cost, and it grows with every macro-task. These budgets are part
+of the format, not a suggestion:
 
-Why the log exists: task numbers (`task-NN`) are **stable identifiers**, not
-an execution order. When you insert an imminent `task-20` while `15–19`
-remain planned for later, the numeric order no longer reflects reality. The
-log records the real timeline so history stays readable without ever
-renumbering.
+| File | Budget | When it is read |
+| ---- | ------ | --------------- |
+| `tasks.md` | one line per macro-task | triage, every session |
+| `task-log.md` | one line (≤ 200 chars) per event | rarely |
+| `<id>.md` (ledger) | Plan 100-300 lines; ED entries ≤ 10 lines each; Summary ≤ 30 lines | detailing, wrap-up |
+| `<id>.log.md` | completion log ≤ 15 lines; review verdict 1 line + findings | wrap-up only |
 
-This is intentionally consolidated. With modern context windows and
-file-reading tools, a single rich ledger per macro-task is more
-efficient than splitting into multiple small files: fewer tool calls,
-no synchronization risk between siblings, and the agent sees the
-whole macro-task state in one read.
+Narrative belongs in chat, not in these files. If a ledger keeps
+growing past its budget, the macro-task is probably too big: split it.
 
 ### `.docs/tasks/tasks.md` — template
 
 ````markdown
 # Tasks — <service-name>
 
-> Macro-task index. The full ledger of each macro-task lives in
-> `task-NN-<name>.md` in the same folder.
+> Macro-task index, one line each. States: pending / in-progress /
+> wrap-up-pending / done / blocked / skipped.
 
 ## Active
 
-### task-01-<short-name>
-
-- **Status**: in-progress
-- **Objective**: <one line — what this macro-task achieves>
-- **Depends on**: <other macro-task IDs or "none">
-- **Ledger**: `./task-01-<short-name>.md`
-
-### task-02-<short-name>
-
-- **Status**: pending
-- **Objective**: …
-- **Depends on**: task-01
-- **Ledger**: `./task-02-<short-name>.md`
+- [03-feat-auth](v0.2/03-feat-auth.md) — in-progress — <objective> — branch `feat/v0.2-03-auth`
+- [04-ref-persistence](v0.2/04-ref-persistence.md) — pending — <objective> — after 03
 
 ## Blocked
 
-### task-NN-<short-name>
-
-- **Status**: blocked
-- **Reason**: <what is blocking, owner of unblock>
-- **Objective**: …
-- **Ledger**: `./task-NN-<short-name>.md`
+- [NN-<type>-<slug>](<path>) — blocked — <reason, who unblocks>
 
 ## Skipped
 
-### task-NN-<short-name>
-
-- **Status**: skipped
-- **Reason**: <why, and what replaces it if anything>
+- [NN-<type>-<slug>](<path>) — skipped — <reason, what replaces it>
 
 ## Completed
 
-### task-NN-<short-name> — <date>
-
-- **Objective**: <original objective>
-- **Ledger**: `./task-NN-<short-name>.md`
+- [02-feat-profile](v0.1/02-feat-profile.md) — done <YYYY-MM-DD> — <one-line outcome>
 ````
 
 **Rules**:
 
-- Sections (`Active`, `Blocked`, `Skipped`, `Completed`) group by state.
-  A task's entry moves between sections as its state changes.
-- Numbering is stable — once assigned, a task's NN never changes.
-  Skipped tasks keep their number.
-- `Completed` section holds history; grow freely. If it becomes
-  unreadably long (rare, probably after a year+), archive to
-  `tasks-archive.md`.
+- **One line per macro-task**, in every section. The details are in
+  the ledger; never copy them here.
+- A line moves between sections as the state changes.
+- `Completed` grows freely; one line per task keeps it cheap.
 
 ### `.docs/tasks/task-log.md` — template
 
 ````markdown
 # Task log — <service-name>
 
-> Chronological, append-only. One entry per task event, newest at the
-> bottom. Task numbers are stable IDs; this log is the real timeline.
-> Never reorder or renumber — only append.
+> Chronological, append-only, one line per event (≤ 200 chars).
+> Task IDs are stable; this log is the real timeline.
 
-## <YYYY-MM-DD>
-
-- task-NN-<short-name>: started <note, e.g. "inserted ahead of 15–19, which
-  remain planned">
-- task-NN-<short-name>: wrapped up — <one-line outcome>
+- <YYYY-MM-DD> — 03-feat-auth — started — <note, e.g. "ahead of 02">
+- <YYYY-MM-DD> — 03-feat-auth — wrapped up — <one-line outcome>
 ````
 
 **Rules**:
 
-- **Append only** — never edit or delete past entries; the log is history.
-- The `planner` owns it: append a `started` entry when a macro-task moves to
-  `in-progress` (planning mode), and a `wrapped up` entry at the end of
-  wrap-up. Keep each line to one sentence.
-- The log complements `tasks.md` (which groups by state); it does not
-  replace it. If they ever disagree, `tasks.md` is authoritative for
+- **Append only** — never edit or delete past entries.
+- The `planner` owns it: a `started` line when a macro-task moves to
+  `in-progress`, a `wrapped up` line at the end of wrap-up.
+- If `tasks.md` and the log disagree, `tasks.md` is authoritative for
   *state*, the log for *chronology*.
 
-### `.docs/tasks/task-NN-<name>.md` — ledger template
+### `<id>.md` — ledger template
 
-This is **the** file for a macro-task. Plan, micro-tasks, emergent
-decisions, and execution logs all live here.
+The ledger holds intent and state. Execution details go to the log file.
 
 ````markdown
-# task-NN-<name>
+# <id> — <title>
 
 **Status**: pending | in-progress | wrap-up-pending | done | blocked | skipped
-**Created**: <YYYY-MM-DD>
-**Last updated**: <YYYY-MM-DD>
+**Version**: <x.y or "backlog" or "—">
+**Branch**: <branch name, or "—">
+**Created**: <YYYY-MM-DD>   **Done**: <YYYY-MM-DD or "—">
 
----
+## Summary
+
+> Written at wrap-up, ≤ 30 lines. The only section a later reader needs:
+> it feeds the pull request body and the CHANGELOG.
+
+- **Delivered**: <what now exists, 2-5 bullets>
+- **Divergences from plan**: <bullets, or "none">
+- **Decisions promoted**: <ED-xx → architecture.md §y / modules/<n>.md>
+- **Quality**: <tests N green (baseline M) · CI <green | not enabled> · review <pass | pass-with-fixes>>
+- **Open**: <SI-xxx, follow-up tasks, or "none">
 
 ## Plan
 
-> Architectural plan written by the planner in architecture mode (via
-> the `architect-service` skill, macro-task-planning mode). Immutable
-> after approval. The full plan template lives in `architect-service`
-> skill — this section embeds the result.
+> Written in architecture mode (`architect-service`, macro-task planning
+> mode). Immutable after approval. 100-300 lines.
 
 ### Objective
-<...>
-
 ### Scope
 **In scope**: <...>
 **Out of scope**: <...>
-
 ### Architecture
-<...>
-
 ### Components
-<...>
-
 ### Flows
-<...>
-
 ### Integration
-<...>
-
 ### Design decisions
 **D-01 — <title>**: ...
-
 ### Risks and open questions
-<...>
-
 ### Approach
-<...>
-
----
 
 ## Micro-tasks
 
-> Atomic units of implementation work. Each has its own status that
-> moves pending → in-progress → done (or blocked / skipped).
+> Status moves pending → in-progress → done (or blocked / skipped).
+> Descriptive fields are immutable after planning.
 
-### micro-task-01-<short-name>
+### mt-01 — <short title>
 
 - **Status**: pending
 - **Security-relevant**: true | false
 - **Objective**: <one line>
 - **Acceptance criteria**:
-  - <bullet 1>
-  - <bullet 2>
+  - <bullet>
 - **Tests required**: <unit / integration / e2e — be specific>
 - **Likely impacted files**: <list, best-effort>
-- **Depends on**: <other micro-task IDs or "none">
+- **Depends on**: <mt-NN or "none">
 - **Risk note**: <optional — unverified assumption + plan B>
 
-### micro-task-02-<short-name>
-
-- **Status**: pending
-- **Security-relevant**: false
-- **Objective**: …
-- **Acceptance criteria**: …
-- **Tests required**: …
-- **Likely impacted files**: …
-- **Depends on**: micro-task-01
-
-### micro-task-NN-<short-name>
+### mt-02 — <short title>
 
 - **Status**: blocked
 - **Reason**: <one line — what blocks, who unblocks>
-- **Objective**: …
-
----
+- …
 
 ## Emergent decisions
 
-> Lazy section — leave empty after planning. Populated only if
-> discoveries surface during detailing or implementation. Each entry
-> must cite which aspect of `Plan` it revises or works around.
+> Lazy section — empty after planning. Each entry ≤ 10 lines and cites
+> the part of the Plan it revises or works around.
 
-### ED-01 — <Short title>
+### ED-01 — <short title>
 
 - **Status**: active | superseded by <ref>
-- **Date**: <YYYY-MM-DD>
-- **Trigger**: <which micro-task or detailing session surfaced this>
+- **Date / trigger**: <YYYY-MM-DD> — <mt-NN or detailing session>
 - **Context**: <1-2 sentences: what was surprising>
-- **Decision**: <what was chosen in response>
-- **Alternatives**: <bullet, 1-3 items considered>
-- **Impact**: <who/what this affects going forward>
-- **Cross-service**: <true/false>
-- **Superseded because**: <only if Status is superseded>
-
----
-
-## Execution logs
-
-> Append-only. One subsection per micro-task as it's executed. Builder
-> writes the completion log; reviewers append their findings.
-
-### micro-task-01-<short-name> — <YYYY-MM-DD>
-
-#### Completion log (builder)
-
-- **Status**: completed | partial | blocked
-- **Files touched**: <list>
-- **Tests**: <count, pass/fail>
-- **Build run**: <yes/no, outcome>
-- **Decisions**: <inline notes; promote to "Emergent decisions" above if significant>
-- **Documentation updates**: <files updated, or "none required">
-- **Issues / follow-up**: <if Status is partial or blocked>
-
-#### Security review (security-reviewer)
-
-(Only present if micro-task was `security-relevant: true`. The
-security-reviewer is read-only and appends findings here.)
-
-#### Code review (code-reviewer)
-
-(Only present if user explicitly invoked code review for this
-micro-task. The code-reviewer may apply fixes to source/test files
-and appends the review summary here.)
-
-### micro-task-02-<short-name> — <YYYY-MM-DD>
-
-(Repeat structure for each executed micro-task.)
-
----
+- **Decision**: <what was chosen>
+- **Alternatives**: <1-3 items considered>
+- **Impact**: <what this affects going forward; cross-service: yes/no>
 
 ## Wrap-up
 
-> Filled at wrap-up time by the planner. Summarizes the macro-task
-> closure activities.
+> Filled at wrap-up by the planner: outcome lines only. The full
+> aggregate review outputs go to the log file.
 
-### Aggregate code review (code-reviewer)
-
-(Mandatory at wrap-up. Cumulative review of the entire macro-task
-diff, catching cross-cutting issues.)
-
-### Architecture consolidation
-
-- **modules/<n>.md created/updated**: <list>
-- **architecture.md updates**: <list>
-- **Decisions promoted**: <list of plan decisions promoted to module docs>
-
-### Doc-sync verification
-
-(Result of cross-checking that documentation updates declared in
-completion logs were actually applied.)
-
-### Security issues opened
-
-(List of security-issues.md entries opened during this macro-task that
-remain `open` at closure time.)
-
-### Final notes
-
-(Brief summary of the macro-task as completed: any divergences from
-plan, lessons learned, follow-up macro-tasks suggested.)
+- **Aggregate code review**: <pass | pass-with-fixes (N fixes) — see log>
+- **Aggregate security review**: <pass | findings SI-xxx | not needed>
+- **Full test suite**: <N green>
+- **CI gate**: <green | not enabled>
+- **Architecture consolidation**: <modules/<n>.md created/updated, architecture.md §x>
+- **Doc-sync verification**: <ok | fixed: …>
 ````
 
 **Rules for the ledger**:
 
-- Sections live in this order: Plan, Micro-tasks, Emergent decisions,
-  Execution logs, Wrap-up. Don't shuffle.
-- The Plan section is **immutable** after approval. Changes go into
-  Emergent decisions, never into Plan.
-- The Execution logs section is **append-only**. Never rewrite past
-  entries — they're history.
-- Micro-tasks section can have status updates (pending → in-progress
-  → done) but the descriptive content (Objective, Acceptance, Tests)
-  is also immutable after planning.
-- Numbering is stable, and **emergent decisions use the `ED-` prefix**
-  (distinct from the Plan's `D-` design decisions, so a reference like
-  `ED-03` is unambiguous). Once `ED-01` exists, a new emergent decision
-  is `ED-02`, even if `ED-01` becomes superseded.
-- **Never delete** entries. Superseded decisions stay; blocked
-  micro-tasks stay; old execution logs stay.
+- Section order: Summary, Plan, Micro-tasks, Emergent decisions, Wrap-up.
+- The Plan is **immutable** after approval. Changes go into Emergent
+  decisions, never into the Plan.
+- Emergent decisions use the `ED-` prefix (the Plan uses `D-`), so a
+  reference like `ED-03` is unambiguous. Numbering is stable: superseded
+  entries stay.
+- **Never delete** entries. Superseded decisions and blocked micro-tasks
+  stay.
+
+### `<id>.log.md` — execution log template
+
+Append-only. Written by the builder and the reviewers; read by the
+planner **only at wrap-up** (and, during detailing, only the entries of
+the micro-tasks the current one depends on). Its size never weighs on
+the per-session context.
+
+````markdown
+# <id> — execution log
+
+## mt-01 — <YYYY-MM-DD>
+
+### Completion log (builder)
+
+- **Status**: completed | partial | blocked
+- **Files touched**: <paths>
+- **Tests**: <added/updated N; ran <subset> — all pass>
+- **Build / quality gate**: <pass | fail (…) | not configured>
+- **Decisions**: <none | ED-xx>
+- **Docs updated**: <files, or "none required">
+- **Issues / follow-up**: <only if partial/blocked>
+
+### Security review (security-reviewer)
+
+**Verdict**: pass — <N checks, no findings> | findings: SI-xxx (<severity>), …
+<one block per finding, ≤ 5 lines; full detail lives in security-issues.md>
+
+### Code review (code-reviewer)
+
+**Verdict**: pass | pass-with-fixes — <fixes, one line each>
+
+## Wrap-up — <YYYY-MM-DD>
+
+### Aggregate code review (code-reviewer)
+### Aggregate security review (security-reviewer)
+````
+
+**Rules for the log**:
+
+- One `## mt-NN — <date>` block per micro-task, in execution order. All
+  headings of the block are `###` under it — never a top-level `##`
+  for a single review.
+- **A clean review is one line.** Write details only for findings and
+  fixes. The completion log stays within 15 lines.
+- Never rewrite past entries — they are history.
+
+### Wrap-up compaction (planner, at every wrap-up)
+
+Run as part of wrap-up, after the reviews and the consolidation:
+
+1. Write the ledger **Summary** (≤ 30 lines) and the **Wrap-up**
+   outcome lines.
+2. Replace the macro-task line in `tasks.md` with its one-line
+   `Completed` form.
+3. Append the `wrapped up` line to `task-log.md` (≤ 200 chars).
+4. Check that the **living docs** (`specs.md`, `architecture.md`,
+   `modules/*.md`) describe the current state only: no "changed in
+   task NN" notes, no superseded alternatives. History stays in the
+   ledger; the living docs point to it at most once.
+5. Leave the log file as it is: after wrap-up nobody loads it again
+   unless investigating.
+
+### Version close (versioning only)
+
+When `principal` closes a version (`git-workflow` skill), the CHANGELOG
+entry for the service is built from the **Summary → Delivered** bullets
+of the version's ledgers. No new prose: the Summaries are the source.
 
 ## Decomposition workflow
 
 When invoked to decompose a macro-task into micro-tasks:
 
-1. **Read the macro-task ledger**: `.docs/tasks/task-NN-<n>.md` —
+1. **Read the macro-task ledger**: `<id>.md` —
    focus on the `Plan` section. Decomposition flows directly from the
    `Approach` subsection of the plan.
 2. **Read any existing service docs** (specs, architecture, relevant
@@ -475,7 +459,7 @@ When invoked to decompose a macro-task into micro-tasks:
 6. **Identify dependencies** between micro-tasks. A linear chain is fine;
    DAG is fine; cycles are a sign of bad decomposition.
 7. **Write the `Micro-tasks` section** of the ledger
-   (`task-NN-<n>.md`), one subsection per micro-task, all in
+   (`<id>.md`), one subsection per micro-task, all in
    `pending` status. The Plan section stays untouched (it was written
    in architecture mode and is now immutable).
 8. **Leave `Emergent decisions` empty**. That section is populated
@@ -489,13 +473,13 @@ When invoked to decompose a macro-task into micro-tasks:
 
 When the planner is about to hand off a micro-task to the builder:
 
-1. **Read the macro-task ledger** (`task-NN-<n>.md`) — specifically:
+1. **Read the macro-task ledger** (`<id>.md`) — specifically:
    - The Plan section for architectural intent
    - The Micro-tasks section to find the target micro-task
    - The Emergent decisions section (may contain prior discoveries
      that affect this micro-task)
-   - Recent Execution logs entries (what other micro-tasks of this
-     macro-task have already done)
+   - From `<id>.log.md`, **only** the entries of the micro-tasks the
+     target one depends on — never the whole log
 2. **Elaborate the plan in chat** — concrete implementation steps,
    edge cases, exact files to touch, specific test scenarios.
 3. **Do not write this plan to disk**. It lives in the session context

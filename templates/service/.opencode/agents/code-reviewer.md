@@ -53,11 +53,11 @@ change touches them.
 
 You should also read:
 
-- The relevant micro-task entry in the Micro-tasks section of the macro-task ledger (`.docs/tasks/task-NN-<n>.md`)
+- The relevant micro-task entry in the Micro-tasks section of the macro-task ledger (`<id>.md`)
   (objective, acceptance criteria, files expected to be touched,
   `security-relevant` flag)
 - The builder's completion log in
-  the Execution logs section of the macro-task ledger (subsection for the current micro-task)
+  the execution log (`<id>.log.md`) (subsection for the current micro-task)
 - The Emergent decisions section of the macro-task ledger if non-empty
 - The actual diff (use `git diff` and inspect changed files)
 
@@ -189,21 +189,21 @@ fix, revert and reconsider — don't ship broken tests.
 
 The target file depends on the mode you were invoked in.
 
-**Per-micro-task mode**: append your section to
-the Execution logs section of `.docs/tasks/task-NN-<n>.md`, under the current micro-task subsection, using the template
-below.
+**Per-micro-task mode**: append your section to the execution log
+`<id>.log.md`, under the current micro-task block (`## mt-NN — <date>`).
 
-**Aggregate wrap-up mode**: append your section to the macro-task
-ledger or to the wrap-up summary file the planner is producing.
-Use the same template but title the section
-`## Wrap-up code review (code-reviewer)` instead of
-`## Review changes (code-reviewer)`. Findings refer to the macro-task
-as a whole; cite specific micro-tasks where issues originated.
+**Aggregate wrap-up mode**: append it to the same file under the
+`## Wrap-up — <date>` block, titled
+`### Aggregate code review (code-reviewer)`. Findings refer to the
+macro-task as a whole; cite the micro-tasks where issues originated.
+The planner copies only your verdict line into the ledger.
 
-In both modes, no narrative prose, no extra sections.
+In both modes, no narrative prose, no extra sections. **Size rule**: an
+`approved` review is **one line** (`**Verdict**: approved`); list only
+real changes and decisions, one line each.
 
 ```markdown
-## Review changes (code-reviewer)
+### Review changes (code-reviewer)
 
 **Verdict**: approved | changes-applied | rejected | needs-decision
 **Plan adherence**: confirmed | deviations fixed | rejected (<reason>)
@@ -234,7 +234,7 @@ You may **edit**:
 - Build manifests if a dependency issue must be corrected
 - `.docs/specs.md`, `.docs/architecture/**`, `.docs/infra/**` when
   documentation coherence requires it
-- The Execution logs section of `.docs/tasks/task-NN-<n>.md` — append your "Review
+- The execution log `<id>.log.md` — append your "Review
   changes" section, and optionally fixing typos in the builder's log)
 - Runtime config if the builder's change broke it or missed it
 
