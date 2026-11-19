@@ -1,6 +1,6 @@
 ---
 name: architect-service
-description: Methodology for architectural work at the service level, across three modes: initial service setup, macro-task planning (design before decomposition), and macro-task consolidation (updating module docs after implementation). Produces foundational docs in setup mode, the Plan section of the macro-task ledger in planning mode, and modules/<n>.md updates in consolidation mode. Invoked by the service-level planner.
+description: "Methodology for architectural work at the service level, across three modes: initial service setup, macro-task planning (design before decomposition), and macro-task consolidation (updating module docs after implementation). Produces foundational docs in setup mode, the Plan section of the macro-task ledger in planning mode, and modules/<n>.md updates in consolidation mode. Invoked by the service-level planner."
 ---
 
 # architect-service

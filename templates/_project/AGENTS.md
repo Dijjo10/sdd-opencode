@@ -41,6 +41,8 @@ implementation are independent.
 
 ```
 <project-root>/
+├── sdd.config.yaml                # pattern settings: CI, git, versioning
+├── CHANGELOG.md                   # one entry per closed version (if versioning)
 ├── _project/                      # ← THIS WORKSPACE (project-level)
 │   ├── AGENTS.md                  # ← you are here
 │   ├── opencode.json              # project workspace config
@@ -49,7 +51,8 @@ implementation are independent.
 │   │   │   └── principal.md       # the single project-level agent
 │   │   └── skills/
 │   │       ├── analyst/           # methodology: requirements → PDR.md
-│   │       └── architect-project/ # methodology: cross-service architecture
+│   │       ├── architect-project/ # methodology: cross-service architecture
+│   │       └── git-workflow/      # version close, tags, branch protection
 │   └── .docs/                     # project-level knowledge (lazy-loaded)
 │       ├── PDR.md
 │       ├── architecture.md

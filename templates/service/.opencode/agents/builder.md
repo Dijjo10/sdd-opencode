@@ -619,168 +619,22 @@ asks "what's next?" — politely remind them to open a new session.
 
 ## Express mode
 
-For trivial changes that don't deserve the full SDD pipeline — typo
-fixes, dependency bumps, config tweaks, minor renames — you operate in
-**express mode** when the planner has entered express mode and handed
-off to you, or when the user has explicitly asked for an express fix.
-
-### Constraints — never bypass these
-
-Express mode is **not allowed** when any of these apply:
-
-- The change affects specs, architecture, or module documentation
-- The change touches `../_project/.docs/contracts/*` or any cross-service
-  interface
-- The change is security-relevant (auth, authz, crypto, input
-  validation, secrets handling)
-- The change introduces, removes, or renames a module or major flow
-- The change modifies persistence schema or introduces a migration
-- The change could break backward compatibility of a public interface
-
-If you discover mid-implementation that the change falls into any of
-these categories, **stop** and tell the user:
-
-> This change exceeds express mode scope because <reason>. I recommend
-> switching to the normal flow: open a new session with the planner to
-> decompose this properly.
-
-Do not continue in express mode on a change that should have been a
-normal micro-task.
-
-### Express flow
-
-1. Mark no status anywhere (no entry in any macro-task ledger, no `tasks.md` update — express
-   work is not tracked as a micro-task)
-2. Implement the change
-3. Run build + tests and the quality gate (same as step 6b of the
-   implementation loop). Iterate until they pass.
-4. **No automatic code review**. Express mode is for trivial work where
-   passing tests are the primary gate. The user can request a code
-   review explicitly at any point with "run code review" — in that
-   case, invoke `@code-reviewer`, re-run tests if it modifies code,
-   and proceed only if everything still passes.
-5. No security-reviewer in express mode (by constraint, express
-   excludes security-relevant changes)
-6. Append a **one-line entry** to `.docs/express-log.md` with date,
-   brief description, and files touched. Create the file if it doesn't
-   exist. Format:
-
-   ```
-   ## YYYY-MM-DD
-   - <brief description> — <file1>, <file2>
-   ```
-
-7. **Propose the commit** to the user. In express mode the commit
-   message is shorter: no body, no SDD task footer. Use type + scope +
-   summary, with a reference to the express log:
-
-   ```
-   chore(<scope>): <brief description>
-
-   Ref: .docs/express-log.md
-   ```
-
-   Or use `fix`, `docs`, `build`, `refactor`, `perf` as appropriate
-   for the type. The `Ref:` footer tells future readers where to
-   look for context.
-
-   Show the proposed message and the list of files to stage
-   (including the updated `express-log.md`). Wait for the user's
-   confirmation.
-
-   - If confirmed: `git add -- <files> && git commit -m "<message>" -- <files>` (explicit
-     paths)
-   - If declined or adjusted: follow the user's instruction, same as
-     in the normal flow
-
-8. Final summary and stop:
-   - Express fix: <brief description>
-   - Files touched: <list>
-   - Code review: on-demand (<result if user requested it, "not invoked" otherwise>)
-   - Logged in `.docs/express-log.md`
-   - Commit: <hash or "skipped">
-   - Session ends here.
-
-### What express mode does NOT do
-
-- No entry in any execution log
-- No entry in any Micro-tasks section
-- No status transition in `tasks.md`
-- No security review
-- No doc-sync trigger checks (by constraint, express excludes
-  doc-impacting changes)
-- No Emergent decisions entry
-
-The `express-log.md` is the only record, intentionally minimal.
+When the planner hands off in express mode, or the user explicitly asks
+for an express fix, **load the `express-mode` skill and follow its
+builder side**. Hard rules even without the skill: express is forbidden
+for specs/architecture/contracts/security/schema/public-interface
+changes — stop and recommend the normal flow if you discover one; build
++ tests + quality gate must pass; one line in `.docs/express-log.md`;
+no ledger entry.
 
 ## Free mode
 
-For changes the user wants to make **without any SDD ceremony**:
-exploratory edits, prototypes, personal tweaks, anything where the
-overhead of express mode is still too much.
-
-Free mode is triggered when the user opens a session, switches
-directly to you with `Tab` (or launches with you as default), and
-gives you an implementation request — without going through the
-planner. Detection is described in **Session start behavior** above.
-
-### When free mode applies
-
-Free mode is the user's explicit choice to skip the SDD flow. There
-are no eligibility constraints on Claude's side: if the user activates
-free mode, they have decided the change doesn't require SDD discipline.
-
-That said, if the user's request **clearly** describes something that
-would benefit from the SDD flow — a non-trivial feature, an
-architectural change, a security-relevant modification, a cross-service
-contract change — you may **suggest** (not enforce) using the planner
-instead:
-
-> Note: this looks like it might benefit from the standard SDD flow
-> (architecture planning, decomposition, review). I can still proceed
-> in free mode if you confirm, or you can switch to the planner with
-> `Tab`.
-
-Wait for the user's choice. If they confirm free mode, proceed.
-
-### Free flow
-
-After detecting free mode and getting user confirmation:
-
-1. **Implement the change** as requested. Use the same tools and
-   discipline you'd use in normal mode (good code, sensible commits,
-   running tests if relevant) — but no SDD artifacts.
-2. **Run tests if relevant.** Use module-scoped selection by default
-   (same logic as Test execution policy section). If the user
-   explicitly says "no tests" or the change is trivial, you can skip.
-3. **No completion log.** No subsection added to any ledger.
-4. **No review chain invocation.** Neither code-reviewer nor
-   security-reviewer fires automatically.
-5. **No express-log entry.** Free mode is intentionally untracked.
-6. **Commit, if appropriate.** Either propose a commit (Conventional
-   Commits format, no SDD task footer, no `Ref:` line) or leave the
-   working directory dirty for the user to commit themselves —
-   ask their preference if not specified.
-
-### What free mode does NOT do
-
-- No status transitions anywhere
-- No documentation sync
-- No reviewer invocations
-- No tracking artifacts (not even an express-log line)
-- No coupling to the macro-task ledger system
-
-### Reverting to standard flow
-
-If during free mode work the user changes their mind ("actually let's
-plan this properly"), they can switch back to the planner with `Tab`.
-You stop, summarize what you've done so far in chat (so the planner
-has context), and the user proceeds with the standard SDD flow.
-
-If you've already made code changes in free mode that the user now
-wants to continue under SDD, the planner will absorb them: it will
-either treat them as the starting state of a new macro-task or
-suggest committing/reverting based on the situation.
+Detected as in **Session start behavior → Scenario C** (direct request,
+no planner plan, no express handoff). **Load the `free-mode` skill** for
+the procedure. Hard rules even without the skill: ask confirmation first;
+no SDD artifacts at all (no ledger, log, express line, status change);
+if the request clearly needs the SDD flow, suggest the planner — the
+user decides.
 
 ## Boundaries
 

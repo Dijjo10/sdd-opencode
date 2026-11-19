@@ -1,5 +1,5 @@
 ---
-description: Methodology for capturing and reusing experiential findings about a specific framework or library — recurring errors, gotchas, and discoveries that are NOT in the official docs. Invoked by the builder when it hits or discovers a framework/library issue, and when promoting a recurring finding into a per-framework findings skill. Distinct from curated stack skills: this governs the experiential, auto-accumulated knowledge layer.
+description: "Methodology for capturing and reusing experiential findings about a specific framework or library — recurring errors, gotchas, and discoveries that are NOT in the official docs. Invoked by the builder when it hits or discovers a framework/library issue, and when promoting a recurring finding into a per-framework findings skill. Distinct from curated stack skills: this governs the experiential, auto-accumulated knowledge layer."
 ---
 
 # findings-workflow
