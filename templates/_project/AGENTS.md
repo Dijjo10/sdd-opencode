@@ -90,6 +90,7 @@ work requires them.
 
 | File / Path                       | What it contains / when to read                            |
 | --------------------------------- | ----------------------------------------------------------- |
+| `../sdd.config.yaml`              | Pattern settings (CI, git, versioning) — **always** read at session start; you own this file |
 | `.docs/PDR.md`                    | Functional & non-functional requirements — read when working on requirements |
 | `.docs/architecture.md`           | Inter-service architecture — read when designing or changing cross-service structure |
 | `.docs/infra.md`                  | Environments, deployment — read when working on infra       |

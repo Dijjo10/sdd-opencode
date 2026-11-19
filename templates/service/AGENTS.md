@@ -19,6 +19,19 @@ For the full functional spec see `.docs/specs.md` (already in your context).
 - **Build / deps**: <build tool and dependency manager>
 - **Test**: <test framework(s) and any integration test tooling>
 
+### Quality checks
+
+The commands that make up this service's **quality gate** (lint, format
+check, type-check, tests). When `ci.provider` in `../sdd.config.yaml`
+is not `none`, the CI pipeline definition is the source of truth and
+this list must mirror it; otherwise this list is the only definition.
+
+- <e.g. `<linter> check .`>
+- <e.g. `<formatter> --check .`>
+- <e.g. `<test runner>`>
+
+*(Leave empty if not defined yet — the gate then runs build + tests only.)*
+
 Skills specific to this service (design system, framework conventions,
 testing patterns, etc.) live under `.opencode/skills/`. Agents load
 them autonomously based on the skill descriptions when relevant to
@@ -76,6 +89,7 @@ reads these with its read tools at session/task start, per the
 
 | File / pattern                        | Read when…                                      |
 | -------------------------------------- | ----------------------------------------------- |
+| `../sdd.config.yaml`                  | **Always**, at session start: CI, git and versioning settings |
 | `../_project/.docs/PDR.md`            | Planning work that touches requirements         |
 | `../_project/.docs/architecture.md`   | Cross-service architecture                      |
 | `../_project/.docs/contracts/*`       | Service contracts (interfaces to others)        |
@@ -114,8 +128,8 @@ agent reads its docs with normal read tools at session/task start.
 
 | Agent              | Mandatory reads at start                                            |
 | ------------------ | -------------------------------------------------------------------- |
-| `planner`          | service arch, server; PDR / contracts / ops / security-issues when the session touches them |
-| `builder`          | service arch, server                                                 |
+| `planner`          | `../sdd.config.yaml`, service arch, server; PDR / contracts / ops / security-issues when the session touches them |
+| `builder`          | `../sdd.config.yaml`, service arch, server                           |
 | `code-reviewer`    | service arch                                                         |
 | `security-reviewer`| service arch, security-issues                                        |
 

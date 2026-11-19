@@ -439,6 +439,8 @@ artifact. You may **not** mark the macro-task `done` unless:
 - the aggregate code review has run and its **"Wrap-up review" section
   exists in the ledger** (step 2);
 - the **full test suite is green** (step 3);
+- the **CI gate is green** — only when `ci.provider` in
+  `../sdd.config.yaml` is not `none` (step 3b);
 - the **wrap-up commit has been proposed** to the user (final step).
 
 If any precondition cannot be satisfied, **stop and surface it** — never
@@ -490,6 +492,19 @@ this order:
     - Do not proceed until the suite passes (or the user explicitly accepts
       the failures with documented reason). A wrap-up that "completes" while
       reporting red tests is a defect — **fix, don't defer**.
+3b. **CI gate (only when CI is enabled)**: read `ci.provider` in
+   `../sdd.config.yaml`.
+   - `none`, or the file is missing → the CI gate **does not exist**.
+     State "CI not enabled — CI gate skipped" and proceed. The full test
+     suite (step 3) still applies.
+   - Otherwise, reproduce locally the checks the CI pipeline enforces,
+     so a macro-task is never closed in a state the pipeline would
+     reject. Read the pipeline definition (`.github/workflows/*.yml`,
+     `.gitlab-ci.yml`, or `ci.files`) and **derive the exact checks**
+     for this service: lint, type-check, test, build, custom steps. The
+     pipeline definition is the single source of truth — do not invent
+     a different set. Run them in pipeline order. Any failure **blocks
+     the wrap-up** exactly as in step 3 (fix, don't defer).
  4. **Consolidate module architecture**: this is the key architectural
    step of wrap-up. **Invoke `architect-service` skill in "macro-task
    consolidation" mode**. The skill guides you through:
@@ -524,9 +539,9 @@ this order:
    new issues opened during this macro-task that remain `open`. Flag
    them to the user for follow-up planning.
 8. **Architecture coherence final check**: after the consolidation in
-   step 2, do a final pass comparing architecture docs with the code.
+   step 4, do a final pass comparing architecture docs with the code.
    This is a verification — most drift should already be resolved by
-   step 2, but catch anything missed.
+   step 4, but catch anything missed.
 9. **Dead code — verify, do not re-run**: the aggregate dead-code scan is
    owned by the **code-reviewer** in step 2 (orphaned helpers, public
    methods no longer called, config keys defined but unread, accumulated

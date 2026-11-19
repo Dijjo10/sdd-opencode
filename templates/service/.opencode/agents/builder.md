@@ -234,6 +234,13 @@ Execute the implementation plan step by step:
    is a time-bomb that fails the day it becomes past.
 6. **Run build + tests**. Iterate on failures. Keep iterating until
    the acceptance criteria are met
+6b. **Quality gate** — run the service's quality checks (see
+   **Tech stack → Quality checks** in `AGENTS.md`; when
+   `ci.provider` in `../sdd.config.yaml` is not `none`, derive them
+   from the CI pipeline definition, which is the source of truth). A
+   micro-task that passes locally but would fail in CI is a process
+   failure: fix it here. If no checks are defined and CI is `none`,
+   build + tests are the whole gate — say so in the completion log.
 7. **Review the diff yourself** before writing the completion log.
    Check that you haven't accidentally touched unrelated files.
 
@@ -389,6 +396,7 @@ sections.
 **Tests added/updated**: <added N unit tests for X | updated existing test Y | none — reason>
 **Tests run**: <subset description, e.g. "auth/* (23 unit, 4 integration) — all pass" or "billing/* (15 unit) — all pass; affected by change to user/CurrentUser.java, also ran user/* (8 unit) — all pass">
 **Build**: pass | fail (<summary>)
+**Quality gate**: <commands run — all pass | fail (<errors>) | "not configured (build + tests only)">
 **Decisions taken**: <bullet list — only if new decisions emerged during implementation, otherwise "none">
 **Documentation updates**:
 - <file updated and what changed>
@@ -635,7 +643,8 @@ normal micro-task.
 1. Mark no status anywhere (no entry in any macro-task ledger, no `tasks.md` update — express
    work is not tracked as a micro-task)
 2. Implement the change
-3. Run build + tests. Iterate until they pass.
+3. Run build + tests and the quality gate (same as step 6b of the
+   implementation loop). Iterate until they pass.
 4. **No automatic code review**. Express mode is for trivial work where
    passing tests are the primary gate. The user can request a code
    review explicitly at any point with "run code review" — in that

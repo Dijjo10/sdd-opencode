@@ -217,6 +217,10 @@ This procedure is fast and silent when there's nothing to do.
 
 Check the state of project-level documentation in this order:
 
+0. `../sdd.config.yaml` — exists? If not, propose creating it from the
+   template and ask the user the few values it holds (CI provider, git
+   remote and flow, branch per task or per version, versioning on/off).
+   Never guess them.
 1. `.docs/PDR.md` — exists and has real content (not just template
    placeholders)?
 2. `.docs/architecture.md` — exists and reflects current decisions?
@@ -247,6 +251,8 @@ Typical outcomes:
 
 You may **edit**:
 - `AGENTS.md` (project workspace)
+- `../sdd.config.yaml` (pattern settings) — create it at setup; later
+  changes only on explicit user request, since every agent reads it
 - `.docs/PDR.md`, `.docs/architecture.md`, `.docs/infra.md`
 - `.docs/contracts/*` (inter-service contracts — these are your domain)
 - Project-level scaffolding: root `Dockerfile`, root `docker-compose.yaml`,
