@@ -329,7 +329,10 @@ decomposition you realize the plan is missing a significant choice,
 propose revising the Plan section instead of pre-populating Emergent decisions
 log.
 
-When the macro-task moves to `in-progress`, **append a `started` entry to
+When the macro-task moves to `in-progress`, load the **`git-workflow`**
+skill and run its **Start of a macro-task** step (create the task branch or
+join the version branch, per `../sdd.config.yaml`); record the branch in
+the `tasks.md` entry. Then **append a `started` entry to
 `.docs/tasks/task-log.md`** (chronological timeline — see the
 `task-decomposition` skill). Task numbers are stable IDs, so record the real
 order of execution in the log, especially when a higher-numbered task is
@@ -578,9 +581,17 @@ this order:
      referencing the ledger.
    - Show the message and the files to be staged, and wait for
      confirmation.
-   - On confirmation, run `git add <files>` (selective, never `-A`) and
-     `git commit -m "<message>"`; report the hash. Never `git push`.
+   - On confirmation, run `git commit -m "<message>" -- <files>`
+     (explicit paths, never `-A`); report the hash.
    - If the user declines, skip the commit but leave the tree ready.
+13. **Integrate (per `../sdd.config.yaml`)**: load the **`git-workflow`**
+   skill and run its **End of wrap-up — integration** step: push, pull
+   request, CI checks, merge on user approval for `git.remote: github`;
+   push only for `other`; local merge on approval or nothing for `none`.
+   A red CI check on the pull request **blocks the integration**: report
+   it, propose a fix micro-task, and leave the macro-task `done` but
+   unmerged — never merge red. If the user prefers to integrate later,
+   say so explicitly in the final summary.
 
 End the wrap-up session after these steps are confirmed by the user.
 The macro-task is now `done` and subsequent sessions will move to

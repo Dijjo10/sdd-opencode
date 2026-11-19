@@ -20,7 +20,7 @@ agent.
 
 > **Permissions are permissive by default**: everything is allowed,
 > commits included. Only actions that leave your machine or destroy
-> history ask first (`git push`, `gh pr merge`, `gh release`,
+> history ask first (`git push`, `git merge`, `gh pr merge`, `gh release`,
 > `git reset --hard`, `git clean`, `sudo`); force-push is denied. The
 > policy lives in the `permissions` array of `opencode.json`.
 
@@ -580,10 +580,10 @@ Wait for the user's response.
 
 #### Execute or hold
 
-- **User confirms** → run `git add <file1> <file2> ...` explicitly
-  listing the files (no `git add -A`, no `git add .`), then
-  `git commit -m "<message>"`. Report the resulting commit hash in
-  chat.
+- **User confirms** → run `git commit -m "<message>" -- <file1> <file2> ...`
+  explicitly listing the files (no `git add -A`, no `git add .`: other
+  services may share the checkout). Report the resulting commit hash
+  in chat.
 - **User adjusts the message** → use the adjusted message, stage and
   commit the same way.
 - **User declines the commit** → do nothing. Leave the working
@@ -591,7 +591,8 @@ Wait for the user's response.
 - **User wants to skip the commit for now** → same as decline, do
   nothing and proceed to Step 7.
 
-Never `git push` — pushing is always the user's explicit action later.
+Never push. Integration (push, PR, merge) happens at the end of the
+macro-task wrap-up, run by the planner through the `git-workflow` skill.
 
 ### Step 7 — Final summary and stop
 
@@ -679,8 +680,8 @@ normal micro-task.
    (including the updated `express-log.md`). Wait for the user's
    confirmation.
 
-   - If confirmed: `git add <files>` (selective) then
-     `git commit -m "<message>"`
+   - If confirmed: `git commit -m "<message>" -- <files>` (explicit
+     paths)
    - If declined or adjusted: follow the user's instruction, same as
      in the normal flow
 

@@ -12,6 +12,11 @@
     },
     {
       "action": "shell",
+      "resource": "*git merge *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
       "resource": "*gh pr merge*",
       "effect": "ask"
     },

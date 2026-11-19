@@ -303,9 +303,18 @@ closing, if the working tree is dirty: run `git status` / `git diff --stat`;
 build a Conventional Commits message scoped to the artifact touched
 (`docs(pdr)`, `docs(contracts)`, `feat(arch)`, `chore(infra)`, …) with a
 footer referencing the relevant doc or ADR; show the message and the files
-to stage; wait for confirmation; on confirmation run `git add <files>`
-(selective, never `-A`) and `git commit -m "<message>"`, then report the
-hash. If the user declines, skip and leave the tree ready. Never `git push`.
+to stage; wait for confirmation; on confirmation run
+`git commit -m "<message>" -- <files>` (explicit paths, never `-A`), then
+report the hash. If the user declines, skip and leave the tree ready. Never
+push from a normal session: pushing happens in the `git-workflow` steps you
+own (version close, branch protection) or in the services' wrap-up.
+
+**Git workflow — your part.** Load the `git-workflow` skill for: **version
+close** (when `versioning.enabled: true` and every macro-task of the current
+version is `done`/`skipped` in all services: changelog, release merge, tag,
+bump `versioning.current`) and **branch protection** (GitHub, once, only on
+explicit user request). Triage surfaces a closable version as a proposed
+next action.
 If nothing was modified (read-only/triage session), skip silently.
 
 When requirements are ambiguous, **ask before writing**. This project

@@ -353,16 +353,17 @@ builder proposes a git commit:
 - Shows the proposed message and the files to be staged
 - Waits for the user's confirmation
 
-On confirmation, the builder runs `git add <files>` (selective, never
-`-A`) and `git commit -m "<message>"`. The commit hash is reported
-in the final summary.
+On confirmation, the builder runs `git commit -m "<message>" -- <files>`
+(explicit paths, never `-A`). The commit hash is reported in the final
+summary.
 
 If the user declines or prefers to commit manually, the builder skips
 the commit and leaves the working directory ready. The user commits on
 their own terms.
 
-The builder never runs `git push` — pushing is always an explicit user
-action afterward.
+The builder never pushes. Integration (push, pull request, CI, merge)
+happens once per macro-task, at the end of wrap-up — see **Git
+workflow** below.
 
 ### 9. End of session
 
@@ -375,10 +376,12 @@ micro-task automatically** — open a fresh session for the next one.
 > Procedure: gather the files actually touched; build a Conventional
 > Commits message (`type(scope): summary`) with a footer referencing the
 > relevant `Task:`/`Micro-task:`/ledger; show the message and the files to
-> stage; wait for confirmation; on confirmation run `git add <files>`
-> (selective, never `-A`) and `git commit -m "<message>"`, then report the
-> hash; if the user declines, skip and leave the tree ready. Never
-> `git push`. This gate applies to every agent (`planner`, `builder`,
+> stage; wait for confirmation; on confirmation run
+> `git commit -m "<message>" -- <files>` (explicit paths, never `-A` or
+> `.` — other services may share the checkout), then report the hash;
+> if the user declines, skip and leave the tree ready. Never push during
+> a session: push, pull request and merge happen only in the
+> integration step at the end of wrap-up (`git-workflow` skill). This gate applies to every agent (`planner`, `builder`,
 > `principal`) and is most often skipped at two points: **after a
 > macro-task Plan is approved** (planning mode) and at the **end of
 > wrap-up** — do not skip it there.
@@ -412,7 +415,27 @@ When triage detects a macro-task with status `wrap-up-pending`, planner:
   those changes; proposes fixes if discrepancies are found
 - Scans for residual dead code across the aggregate diff
 - Transitions macro-task status `wrap-up-pending → done`
+- **Integrates the branch** per `sdd.config.yaml` (`git-workflow`
+  skill): push, pull request, CI checks, merge on user approval — or
+  a local merge, or nothing, depending on `git.remote`
 - Surfaces the next macro-task
+
+## Git workflow
+
+Driven by the `git` and `ci` sections of `../sdd.config.yaml` and
+executed through the `git-workflow` skill:
+
+- **Macro-task start** (planning mode): the planner creates the task
+  branch (`branch_per: task`) or joins the version branch
+  (`branch_per: version`).
+- **During micro-tasks**: commits only, with explicit paths. No branch
+  switch, merge, rebase or stash — other services may share the
+  checkout.
+- **End of wrap-up**: integration — push, pull request, CI checks,
+  merge on user approval (GitHub), or the equivalent for `other` /
+  `none`.
+- **Version close** (`versioning.enabled: true`): owned by `principal`
+  — changelog, release merge, tag.
 
 ## UI work — mockups are the source of truth (frontend services only)
 
