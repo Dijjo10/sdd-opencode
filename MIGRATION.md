@@ -81,7 +81,8 @@ your workspaces. Keep your own additions: `<stack-name>` skills and
   if you have one).
 
 A good shortcut: ask the `planner` (service) or `principal` (`_project`)
-to do this merge in a free-mode session, with the template file as input.
+to do this merge in a normal session, with the template file as input
+(it is a documentation task: the agents may edit `AGENTS.md`).
 
 ## 6. Migrate the task files
 

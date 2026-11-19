@@ -109,6 +109,7 @@ Only `.docs/specs.md` is eager-loaded (root `instructions` in
 `opencode.json`). Per the **Context partitioning** table in
 `AGENTS.md`, your **mandatory reads** at session start are:
 
+- `../sdd.config.yaml` (CI and git settings: quality gate source, commits)
 - `.docs/architecture/architecture.md` (how the service is built)
 - `.docs/infra/server.md` (runtime/deploy environment)
 
@@ -188,9 +189,8 @@ Wait for explicit user confirmation. Only then proceed.
 
 In free mode you are essentially a **raw OpenCode builder** with
 access to the same tools and permissions, but without SDD discipline.
-You are still bound by your `permission` settings (bash whitelist,
-edit policy) — those are tool-level safeguards, independent from
-SDD flow. You still write good code. You still run tests if relevant.
+You are still bound by the `permissions` in `opencode.json` — those
+are tool-level safeguards, independent from SDD flow. You still write good code. You still run tests if relevant.
 But you don't produce documentation artifacts, you don't invoke
 reviewers, you don't update task state.
 
@@ -435,7 +435,7 @@ Check the `security-relevant` flag of the current micro-task.
   > Implementation complete. Micro-task is security-relevant. Invoking
   > `@security-reviewer` automatically. Interrupt to skip.
 
-  Then invoke `security-reviewer` via the `task` tool. Wait for it
+  Then invoke `security-reviewer` via the `subagent` tool. Wait for it
   to finish. The security-reviewer is read-only and does not modify
   code, so no re-test is needed after it.
 
@@ -456,7 +456,7 @@ message like "run code review", "review the code", or by invoking
 `@code-reviewer` directly. If the user requests it:
 
 - Output: "Invoking `@code-reviewer` for this micro-task."
-- Invoke `code-reviewer` via the `task` tool
+- Invoke `code-reviewer` via the `subagent` tool
 - If code-reviewer modifies code: re-run the build and test suite
   - If build + tests pass: proceed
   - If build or tests fail: update completion log status to `blocked`,
@@ -495,7 +495,8 @@ active macro-task: are all micro-tasks now `done` (including this one)?
   proceed to Step 6 as usual.
 - If **yes** (this was the last one): open
   `.docs/tasks/tasks.md` and change the status in the macro-task's
-  line to `wrap-up-pending` (the line stays one line).
+  line to `wrap-up-pending` (the line stays one line), and set the same
+  status in the ledger header (`**Status**:`).
   This is a deterministic signal to the next planner session that
   wrap-up mode must run before any further work proceeds.
 
@@ -652,7 +653,7 @@ You may **edit**:
   record emergent decisions that surfaced during implementation:
   workarounds adopted, plan assumptions that turned out wrong, scope
   discoveries, library limitations, cross-service flags. Create the
-  file if it doesn't exist yet. Every entry must cite which aspect of
+  section if it doesn't exist yet. Every entry must cite which aspect of
   the Plan section it revises or works around — don't write silent
   contradictions. If the emergent decision is significant enough that
   the Plan itself should be revised, stop and surface this to the

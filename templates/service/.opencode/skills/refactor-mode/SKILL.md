@@ -118,9 +118,11 @@ micro-tasks (`done` ones now obsolete, `pending` ones needing revision).
 After user confirmation, apply state changes: in `tasks.md` mark affected
 macro-tasks `blocked` (will resume) or `skipped` (abandoned) with a one-line
 reason; mark affected micro-tasks likewise in their ledgers; for each
-superseded decision set `Status: superseded by NN-ref-<slug>` plus a
-one-line "Superseded because" note. **Never delete original decision text** —
-it stays as history. Do **not** touch `specs.md`/`architecture.md`/`modules/*`
+superseded decision, add a one-line note right after it:
+`Superseded by NN-ref-<slug> — <because>` (for an `ED-` entry, set its
+`Status` field instead). This note is the only edit ever allowed to an
+approved Plan. **Never delete original decision text** — it stays as
+history. Do **not** touch `specs.md`/`architecture.md`/`modules/*`
 now: they keep describing current code until the refactor's wrap-up updates
 them. Until then the refactor task's Plan section is the source of truth for
 the target.
@@ -128,7 +130,8 @@ the target.
 **Phase 3 — Create the refactor macro-task.** Add it to `tasks.md`: ID
 `NN-ref-<slug>` (the `ref` type is mandatory),
 status `pending`, one-line objective (the target, not the abandoned state),
-and `Depends on` any blocked macro-tasks that resume afterward. Don't write
+and note in the blocked macro-tasks' lines that they resume after it
+(`— after NN-ref-<slug>`). Don't write
 the Plan yet — that's `architect-service`'s job next session. End the session
 telling the user to open a new one for architecture mode.
 

@@ -1,9 +1,9 @@
 # sdd.config.yaml — SDD pattern settings for this monorepo.
 #
 # Lives at the monorepo root, next to `_project/` and the service folders.
-# Every agent reads it at session start (it is small on purpose). The
-# `principal` agent owns it: it creates it during project setup and edits
-# it only on explicit user request.
+# `principal`, `planner` and `builder` read it at session start (it is
+# small on purpose). `principal` owns it: it creates it during project
+# setup and edits it only on explicit user request.
 #
 # If this file is missing, agents behave as if:
 #   ci.provider: none, git.remote: none, versioning.enabled: false

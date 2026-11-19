@@ -293,7 +293,7 @@ The ledger holds intent and state. Execution details go to the log file.
 - **Delivered**: <what now exists, 2-5 bullets>
 - **Divergences from plan**: <bullets, or "none">
 - **Decisions promoted**: <ED-xx → architecture.md §y / modules/<n>.md>
-- **Quality**: <tests N green (baseline M) · CI <green | not enabled> · review <pass | pass-with-fixes>>
+- **Quality**: <tests N green (baseline M) · CI <green | not enabled> · code review <approved | changes-applied> · security <pass | issues-found | not needed>>
 - **Open**: <SI-xxx, follow-up tasks, or "none">
 
 ## Plan
@@ -356,8 +356,8 @@ The ledger holds intent and state. Execution details go to the log file.
 > Filled at wrap-up by the planner: outcome lines only. The full
 > aggregate review outputs go to the log file.
 
-- **Aggregate code review**: <pass | pass-with-fixes (N fixes) — see log>
-- **Aggregate security review**: <pass | findings SI-xxx | not needed>
+- **Aggregate code review**: <approved | changes-applied (N fixes) — see log>
+- **Aggregate security review**: <pass | issues-found (SI-xxx) | not needed>
 - **Full test suite**: <N green>
 - **CI gate**: <green | not enabled>
 - **Architecture consolidation**: <modules/<n>.md created/updated, architecture.md §x>
@@ -367,6 +367,8 @@ The ledger holds intent and state. Execution details go to the log file.
 **Rules for the ledger**:
 
 - Section order: Summary, Plan, Micro-tasks, Emergent decisions, Wrap-up.
+- The status lives in two places, the ledger header and the `tasks.md`
+  line: whoever changes it updates both in the same commit.
 - The Plan is **immutable** after approval. Changes go into Emergent
   decisions, never into the Plan.
 - Emergent decisions use the `ED-` prefix (the Plan uses `D-`), so a
@@ -389,28 +391,27 @@ the per-session context.
 
 ### Completion log (builder)
 
-- **Status**: completed | partial | blocked
-- **Files touched**: <paths>
-- **Tests**: <added/updated N; ran <subset> — all pass>
-- **Build / quality gate**: <pass | fail (…) | not configured>
-- **Decisions**: <none | ED-xx>
-- **Docs updated**: <files, or "none required">
-- **Issues / follow-up**: <only if partial/blocked>
+<builder's template — see "Completion log" in builder.md>
 
 ### Security review (security-reviewer)
 
-**Verdict**: pass — <N checks, no findings> | findings: SI-xxx (<severity>), …
-<one block per finding, ≤ 5 lines; full detail lives in security-issues.md>
+<only if security-relevant — security-reviewer's template;
+a pass is one line: **Verdict**: pass — <categories assessed>>
 
 ### Code review (code-reviewer)
 
-**Verdict**: pass | pass-with-fixes — <fixes, one line each>
+<only if requested — code-reviewer's "Review changes" template;
+an approval is one line: **Verdict**: approved>
 
 ## Wrap-up — <YYYY-MM-DD>
 
 ### Aggregate code review (code-reviewer)
 ### Aggregate security review (security-reviewer)
 ````
+
+The templates of each block are defined **once**, in the agent that
+writes it (`builder.md`, `code-reviewer.md`, `security-reviewer.md`); this
+skill only fixes where the blocks go.
 
 **Rules for the log**:
 

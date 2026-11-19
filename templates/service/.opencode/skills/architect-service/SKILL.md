@@ -254,62 +254,66 @@ macro-task (status `pending`, ledger `<id>.md` does not exist yet, or exists wit
 
 ### What you produce
 
-**The Plan section** of the macro-task ledger: `<id>.md`. The ledger file is created if it doesn't exist; if it exists with an empty Plan section, the section is filled.
+**The `## Plan` section** of the macro-task ledger `<id>.md`. If the
+ledger does not exist yet, first create it from the **ledger skeleton**
+in the `task-decomposition` skill (header lines, empty `## Summary`), then
+fill `## Plan` with the template below. If it exists with an empty Plan,
+fill only that section.
 
-This file captures the architectural intent of the macro-task before
+The Plan captures the architectural intent of the macro-task before
 decomposition. It is the answer to "how are we going to build this?".
 
 ````markdown
-# Plan — <id>
+## Plan
 
 > Architectural plan for this macro-task, produced before decomposition
 > into micro-tasks. Captures intent, design decisions, and approach.
-> This file is the architectural baseline of the macro-task — it is
+> This section is the architectural baseline of the macro-task — it is
 > written once, before micro-task decomposition, and referenced
 > throughout implementation.
 
-## Objective
+### Objective
 
 <What this macro-task introduces or changes in the service.
 1-3 sentences, high level. Focus on the "why" and the "what", not
 the "how" (that's in Architecture below).>
 
-## Scope
+### Scope
 
-### In scope
+#### In scope
 - <Bullet list of what this macro-task delivers>
 
-### Out of scope
+#### Out of scope
 - <Explicit exclusions. Things that might seem related but are not
   being done here. Surface them so future work is not ambiguous.>
 
-## Architecture
+### Architecture
 
 <Describe the module, feature, or flow being introduced or modified.
 Responsibilities, boundaries, how it fits into the existing service.
 Reference `architecture.md` and existing `modules/*.md` when
 relevant — don't duplicate their content.>
 
-### Components
+#### Components
 
 <Main components, classes, or files that will exist at the end.
 This is the skeleton, not an exhaustive file listing. 3-7 items.>
 
-### Flows
+#### Flows
 
 <Primary flows or sequences introduced or modified. Narrative or
 numbered steps. Reference external systems where they interact.>
 
-### Integration
+#### Integration
 
 <How this macro-task's output integrates with:
 - Existing modules in this service
 - Other services (if any — reference contracts)
 - External systems (databases, APIs, queues, etc.)>
 
-## Design decisions
+### Design decisions
 
-### D-01 — <Short title>
+#### D-01 — <Short title>
 
 - **Context**: <1-2 sentences: what forced this decision>
 - **Decision**: <what was chosen>
@@ -318,19 +322,19 @@ numbered steps. Reference external systems where they interact.>
 - **Rationale**: <why this over alternatives>
 - **Consequences**: <what this enables, constrains, or costs>
 
-### D-02 — …
+#### D-02 — …
 
 <Repeat for each significant decision. Not every small choice — only
 decisions that would surprise a reader or that affect implementation
 direction.>
 
-## Risks and open questions
+### Risks and open questions
 
 - <Known risks being accepted at plan time>
 - <Open questions that will be resolved during implementation — be
   explicit about the fact that they're open>
 
-## Approach
+### Approach
 
 <High-level sequence describing how implementation will unfold. This
 is what guides the decomposition in the next phase. Example:

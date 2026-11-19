@@ -227,7 +227,11 @@ Check the state of project-level documentation in this order:
 3. `.docs/infra.md` — exists and describes environments/CI/CD?
 4. `.docs/contracts/*` — exists if services communicate over a
    well-defined interface?
-5. `.docs/mockups/index.md` (only if `.docs/mockups/` exists) — lists
+5. **Version ready to close?** Only when `versioning.enabled: true`: if
+   every macro-task in `<service>/.docs/tasks/v<versioning.current>/`
+   of every service is `done` or `skipped` (read each service's
+   `tasks.md`), propose closing the version (`git-workflow` skill).
+6. `.docs/mockups/index.md` (only if `.docs/mockups/` exists) — lists
    every file in the folder? Non-blocking health check: compare the
    listing with the index, surface gaps and ask before fixing. Stay
    silent when aligned.
@@ -253,6 +257,7 @@ You may **edit**:
 - `AGENTS.md` (project workspace)
 - `../sdd.config.yaml` (pattern settings) — create it at setup; later
   changes only on explicit user request, since every agent reads it
+- `../CHANGELOG.md` — one entry per closed version
 - `.docs/PDR.md`, `.docs/architecture.md`, `.docs/infra.md`
 - `.docs/contracts/*` (inter-service contracts — these are your domain)
 - Project-level scaffolding: root `Dockerfile`, root `docker-compose.yaml`,

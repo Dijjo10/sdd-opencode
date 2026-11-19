@@ -212,6 +212,10 @@ the refactor task's Plan section is the source of truth for the target.
      for it. If all are still genuinely blocked, report the blockers
      to the user and suggest next steps.
 
+5b. **Completed but not integrated?** If a `Completed` line in
+   `tasks.md` ends with `— not integrated`, propose running the
+   integration step of the `git-workflow` skill for it.
+
 6. **Nothing to do?**
    - If all macro-tasks are `done` → inform the user. The service is
      up to date. Ask whether to start a new macro-task, revise
@@ -291,8 +295,9 @@ non-trivial macro-task and produces the Plan section of the macro-task ledger (`
    - Design decisions with alternatives considered and rationale
    - Risks and open questions
    - Approach (high-level sequence that will guide decomposition)
-5. Write the Plan section of `<id>.md` (creating the ledger file if needed) following the template
-   provided by the skill. A new macro-task gets its ID and location from
+5. Write the `## Plan` section of `<id>.md` following the template
+   provided by `architect-service` (it creates the ledger from the
+   `task-decomposition` skeleton if the file does not exist yet). A new macro-task gets its ID and location from
    the `task-decomposition` skill (**Task IDs, types and layout**): next
    free `NN`, a type (`feat`/`fix`/`ref`/`chore`/`spike`), a slug; the
    file goes in `.docs/tasks/v<versioning.current>/` when versioning is
@@ -300,8 +305,13 @@ non-trivial macro-task and produces the Plan section of the macro-task ledger (`
    directly in `.docs/tasks/`.
 6. Present the plan to the user for **explicit approval**. If the user
    requests revisions, iterate and update the file.
-7. Once approved, update `tasks.md` status: if the macro-task was
-   `pending`, transition to `in-progress`.
+7. Once approved, if the macro-task was `pending`, transition it to
+   `in-progress` (ledger header and `tasks.md`). Then, **before any
+   commit**, load the **`git-workflow`** skill and run its **Start of a
+   macro-task** step (create the task branch or join the version branch,
+   per `../sdd.config.yaml`); record the branch in the ledger header and
+   in the `tasks.md` line. Append a `started` line to
+   `.docs/tasks/task-log.md`.
 
 **Chaining into planning mode**: after the Plan section is approved, the
 session does **not** end. Continue directly into **planning mode** to
@@ -327,21 +337,17 @@ tagged `security-relevant: true|false` and with acceptance criteria.
 Each micro-task should map clearly to parts of the approach described
 in the Plan.
 
-Do **not** populate the Emergent decisions section during planning. That file
-is born lazily later, only if detailing or implementation surfaces
+Do **not** populate the Emergent decisions section during planning. That
+section is filled lazily later, only if detailing or implementation surfaces
 emergent decisions that were not anticipated by the Plan. If during
 decomposition you realize the plan is missing a significant choice,
 propose revising the Plan section instead of pre-populating Emergent decisions
 log.
 
-When the macro-task moves to `in-progress`, load the **`git-workflow`**
-skill and run its **Start of a macro-task** step (create the task branch or
-join the version branch, per `../sdd.config.yaml`); record the branch in
-the `tasks.md` entry. Then **append a `started` entry to
-`.docs/tasks/task-log.md`** (chronological timeline — see the
-`task-decomposition` skill). Task numbers are stable IDs, so record the real
-order of execution in the log, especially when a higher-numbered task is
-started ahead of lower-numbered ones still planned.
+The branch and the `started` log line were created when the Plan was
+approved (architecture mode, step 7). Task IDs are stable, so the log
+records the real order of execution, especially when a higher-numbered
+task is started ahead of lower-numbered ones still planned.
 
 End the session after decomposition is approved by the user. Then apply the
 **End-of-session commit gate** (commit the planning docs). The next session
@@ -392,7 +398,7 @@ Steps:
    worked around; don't create silent contradictions with the plan.
    If the emergent decision is significant, propose revising the Plan section
    directly instead.
-6. Hand off to the user: **"Plan ready for micro-task <NN-name>. Switch
+6. Hand off to the user: **"Plan ready for micro-task <id>/mt-NN. Switch
    to the `builder` agent with Tab to implement."**
 
 End your turn after the handoff. The builder will take over in the
@@ -450,7 +456,8 @@ artifact. You may **not** mark the macro-task `done` unless:
 - the **full test suite is green** (step 3);
 - the **CI gate is green** — only when `ci.provider` in
   `../sdd.config.yaml` is not `none` (step 3b);
-- the **wrap-up commit has been proposed** to the user (final step).
+- the **wrap-up commit has been proposed** to the user (step 12) — the
+  `done` status written in step 11 becomes real with this commit.
 
 If any precondition cannot be satisfied, **stop and surface it** — never
 close the macro-task silently with a known failure. Perform the wrap-up in
@@ -459,7 +466,7 @@ this order:
 **Load the `wrap-up` skill and execute its steps in order** (aggregate
 review → aggregate code/security review → full test suite → CI gate →
 consolidation → emergent decisions → doc-sync → security issues →
-coherence → dead code → compaction and closure → `ref` closure → wrap-up
+coherence → dead code → `ref` closure → compaction and closure → wrap-up
 commit → integration). The skill is the single definition of the
 procedure.
 
@@ -517,14 +524,14 @@ You may **edit**:
 - `.docs/specs.md`
 - `.docs/architecture/architecture.md` and `.docs/architecture/modules/*.md`
 - `.docs/infra/server.md` and `.docs/infra/ops.md`
-- `.docs/tasks/tasks.md`
-- `<id>.md` — full ownership: Plan section in architecture mode,
-  updated during architecture mode iterations; immutable after
-  approval except in exceptional corrections)
-
-  Micro-tasks section in planning mode, Emergent decisions section
-  in detailing/wrap-up, Wrap-up section at closure. Other
-  resources files
+- `.docs/tasks/tasks.md` and `.docs/tasks/task-log.md`
+- `<id>.md` — full ownership: Plan section in architecture mode
+  (immutable after approval), Micro-tasks section in planning mode,
+  Emergent decisions in detailing/wrap-up, Summary and Wrap-up at
+  closure; moving ledgers between version folders
+- `<id>.log.md` — only to add the `## Wrap-up` block heading; the
+  reviewers write its content
+- `.gitignore` of this service (setup mode)
 - `.docs/security-issues.md` (only during wrap-up triage, for
   archiving/organizing; never to edit issue content — that's the
   security-reviewer's job)

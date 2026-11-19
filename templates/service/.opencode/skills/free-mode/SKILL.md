@@ -58,7 +58,8 @@ overhead of express mode is still too much.
 Free mode is triggered when the user opens a session, switches
 directly to you with `Tab` (or launches with you as default), and
 gives you an implementation request — without going through the
-planner. Detection is described in **Session start behavior** above.
+planner. Detection is described in `builder.md`, **Session start behavior →
+Scenario C**.
 
 ### When free mode applies
 

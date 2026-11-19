@@ -252,8 +252,8 @@ You must **never edit**:
 ## Session end
 
 After appending your review section, your turn ends. Return control to
-the builder, which will proceed to invoke the security-reviewer (if
-flagged) or close the session.
+the agent that invoked you: the builder (on-demand review) or the planner
+(aggregate review at wrap-up).
 
 Do not announce next steps or invoke other subagents yourself — that's
 the builder's role.

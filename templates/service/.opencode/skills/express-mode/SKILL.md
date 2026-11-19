@@ -189,8 +189,9 @@ normal micro-task.
    - <brief description> — <file1>, <file2>
    ```
 
-7. **Propose the commit** to the user. In express mode the commit
-   message is shorter: no body, no SDD task footer. Use type + scope +
+7. **Propose the commit** to the user, on the current branch (if that is
+   a protected integration branch, follow **Express changes** in the
+   `git-workflow` skill). In express mode the commit message is shorter: no body, no SDD task footer. Use type + scope +
    summary, with a reference to the express log:
 
    ```

@@ -8,11 +8,11 @@
 
 ## Why this is a separate workspace
 
-OpenCode loads a single `opencode.json` per session — the one in the
-directory where you launch `opencode`, or the closest one walking up
-the tree. It does **not** merge nested configs. To keep project-level
-and service-level concerns properly isolated, this monorepo uses
-**two kinds of OpenCode workspaces**:
+OpenCode reads the `opencode.json` and the `.opencode/agents/` folders
+found from the launch directory up the tree, into one agent namespace.
+To keep project-level and service-level agents from mixing, this
+monorepo uses **two kinds of OpenCode workspaces**, side by side, with
+no `opencode.json` at the monorepo root:
 
 - **This workspace** (`_project/`) — for project-wide concerns. Launch
   with `cd _project && opencode`.

@@ -38,12 +38,13 @@ These rules keep them from damaging each other's work:
 | Thing | Pattern | Example |
 | ----- | ------- | ------- |
 | Integration branch | `main` (github-flow) or `develop` (git-flow) | `develop` |
-| Macro-task branch (`branch_per: task`) | `<type>/<task-id>` | `feat/v0.2-03-auth`, `fix/07a-token-refresh` |
+| Macro-task branch (`branch_per: task`) | `<type>/[v<x.y>-]<NN[letter]>-<slug>` | `feat/v0.2-03-auth`, `fix/07a-token-refresh` |
 | Version branch (`branch_per: version`) | `version/<major>.<minor>` | `version/0.2` |
 | Tag | `v<major>.<minor>.<patch>` | `v0.2.0` |
 
-`<type>` and `<task-id>` come from the macro-task ID (see the
-`task-decomposition` skill). Record the branch name in the macro-task
+`<type>`, `NN` and `<slug>` come from the macro-task ID (see the
+`task-decomposition` skill); the `v<x.y>-` prefix is used only when
+versioning is enabled. Record the branch name in the macro-task
 entry of `tasks.md`.
 
 ## 1. Start of a macro-task
@@ -59,8 +60,9 @@ the planning-docs commit.
 - `branch_per: task`:
   1. Check that **no other service has uncommitted work** in this
      checkout (`git status --porcelain`, look outside your folder). If
-     another service is busy, do not switch: propose a worktree instead
-     (`git worktree add ../<repo>-<service> -b <branch> <integration>`)
+     another service is busy, do not switch: propose a worktree **next to
+     the repository**, not inside it:
+     `git worktree add "$(git rev-parse --show-toplevel)/../<repo>-<service>" -b <branch> <integration>`
      and stop until the user decides.
   2. Update the integration branch if a remote exists
      (`git fetch origin <integration>`).
@@ -83,9 +85,11 @@ GitHub, `branch_per: task`:
 1. `git push -u origin <branch>`
 2. `gh pr create --base <integration> --head <branch> --title "<type>(<scope>): <macro-task title>" --body-file <tmp>` —
    the body is the ledger's **Summary** plus a link to the ledger.
-3. If `ci.provider` is not `none`: `gh pr checks <branch> --watch`. A
-   failing check **blocks the integration**: report it, propose a fix
-   micro-task, stop. Never merge red.
+3. If `ci.provider` is not `none`: `gh pr checks <branch> --watch`. If it
+   reports that no checks exist yet, wait ~30 seconds and retry: checks
+   take a moment to register. A failing check **blocks the integration**
+   (the `wrap-up` skill says how to reopen the macro-task). Never merge
+   red.
 4. Ask the user to approve the merge, then
    `gh pr merge <branch> --merge --delete-branch`. Use a merge commit
    (not squash): micro-task commits stay visible for audit.
@@ -103,8 +107,10 @@ macro-task in `.docs/tasks/v<x.y>/` of every service is `done` or
    - `branch_per: version` → PR (or local merge) `version/<x.y>` →
      integration branch, same steps as section 2.
    - `flow: git-flow` → PR (or local merge) `develop` → `main`.
-3. Tag on the release branch (`main`):
-   `git tag -a v<x.y>.0 -m "v<x.y>.0"` and `git push origin v<x.y>.0`.
+3. Tag on the up-to-date release branch:
+   `git switch main` (then `git pull --ff-only` if a remote exists),
+   `git tag -a v<x.y>.0 -m "v<x.y>.0"`, and — only when
+   `git.remote` is not `none` — `git push origin v<x.y>.0`.
 4. Bump `versioning.current` in `sdd.config.yaml` to the next version.
 
 ## 4. Branch protection (GitHub, once)
@@ -116,7 +122,7 @@ is enabled. Show the command and wait for approval:
 
 ```
 gh api -X PUT repos/<owner>/<repo>/branches/<branch>/protection \
-  -F required_pull_request_reviews=null \
+  -F 'required_pull_request_reviews[required_approving_review_count]=0' \
   -F enforce_admins=false \
   -F restrictions=null \
   -F 'required_status_checks[strict]=true' \
@@ -124,6 +130,14 @@ gh api -X PUT repos/<owner>/<repo>/branches/<branch>/protection \
   -F allow_force_pushes=false -F allow_deletions=false
 ```
 
-Without CI, set `required_status_checks=null`. A solo developer usually
-keeps `required_pull_request_reviews=null`: the PR is the integration
-point, not a second reviewer.
+Without CI, replace the two `required_status_checks` lines with
+`-F required_status_checks=null`. With 0 required approvals a pull request
+is still mandatory, but a solo developer can merge it: the PR is the
+integration point, not a second reviewer.
+
+## 5. Express changes
+
+Express commits go on the current branch. If that is a protected
+integration branch (pushes rejected), create a short branch
+`chore/express-<slug>` (or `fix/…`) from it, commit there, and integrate
+it as in section 2.

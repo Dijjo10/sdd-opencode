@@ -19,7 +19,7 @@ Execute the steps below **in order**; never skip one silently.
     divergences from plan (features added/removed/modified during
     implementation).
 2. **Aggregate code review (mandatory)**: invoke `@code-reviewer` via
-   the `task` tool with explicit instruction to review the **aggregate
+   the `subagent` tool with explicit instruction to review the **aggregate
    diff of the entire macro-task**, not a single micro-task. This is
    the macro-level quality gate that compensates for the per-micro-task
    review being on-demand during implementation. The code-reviewer will:
@@ -114,21 +114,15 @@ Execute the steps below **in order**; never skip one silently.
    owned by the **code-reviewer** in step 2 (orphaned helpers, public
    methods no longer called, config keys defined but unread, accumulated
    dead code). Do **not** repeat that analysis here — that would duplicate
-   the reviewer's work. Your job is only to **confirm** the "Wrap-up
-   review" section reports the dead-code check as done, and to handle two
+   the reviewer's work. Your job is only to **confirm** the "Aggregate code
+   review" section of `<id>.log.md` reports the **Dead code & legacy**
+   field as done, and to handle two
    things the reviewer doesn't own: `SDD-KEEP` markers whose reason
    references a now-completed task (flag them for removal), and anything
    the user explicitly asked you to double-check. Each check has a single
    owner — the planner orchestrates and verifies, it does not re-execute
    the subagents' work.
-10. **Compaction and closure** — run the **Wrap-up compaction** procedure
-   of the `task-decomposition` skill: write the ledger **Summary**
-   (≤ 30 lines) and **Wrap-up** outcome lines; set the status to `done`
-   and turn the `tasks.md` entry into its one-line `Completed` form;
-   append the one-line `wrapped up` entry to `task-log.md`; check that
-   the living docs describe the current state only. Surface the next
-   macro-task in the queue.
- 11. **Refactor closure** (only if the macro-task is of
+10. **Refactor closure** (only if the macro-task is of
     type `ref`): verify that the target architecture described
     in the refactor task's Plan section has been realized in the code,
     and that `specs.md` / `architecture.md` / `modules/<n>.md` now
@@ -139,6 +133,13 @@ Execute the steps below **in order**; never skip one silently.
    to `pending` or `in-progress` as appropriate. Finally, clean up any
    `SDD-KEEP` markers introduced during the refactor for parallel-
    implementation transitions.
+11. **Compaction and closure** — run the **Wrap-up compaction** procedure
+   of the `task-decomposition` skill: write the ledger **Summary**
+   (≤ 30 lines) and **Wrap-up** outcome lines; set the status to `done`
+   and turn the `tasks.md` entry into its one-line `Completed` form;
+   append the one-line `wrapped up` entry to `task-log.md`; check that
+   the living docs describe the current state only. Surface the next
+   macro-task in the queue.
 12. **Propose the wrap-up commit (mandatory exit precondition)**: gather
    every file modified during wrap-up (ledgers, `tasks.md`, `task-log.md`,
    architecture docs, `security-issues.md`, etc.) and **propose a commit**
@@ -156,11 +157,14 @@ Execute the steps below **in order**; never skip one silently.
    skill and run its **End of wrap-up — integration** step: push, pull
    request, CI checks, merge on user approval for `git.remote: github`;
    push only for `other`; local merge on approval or nothing for `none`.
-   A red CI check on the pull request **blocks the integration**: report
-   it, propose a fix micro-task, and leave the macro-task `done` but
-   unmerged — never merge red. If the user prefers to integrate later,
-   say so explicitly in the final summary.
+   - **Red CI** on the pull request blocks the integration — never merge
+     red. Reopen the macro-task: add a fix micro-task (`mt-NNa`) to the
+     ledger, set the status back to `in-progress` in the ledger header
+     and in `tasks.md` (the line goes back to `Active`), commit this
+     change, and stop. The fix runs in the normal flow; the next wrap-up
+     repeats the gates and the integration.
+   - **Integration deferred** by the user: keep the macro-task `done`,
+     append ` — not integrated` to its `Completed` line in `tasks.md`.
+     Planner triage proposes the integration in a later session.
 
 End the wrap-up session after these steps are confirmed by the user.
-The macro-task is now `done` and subsequent sessions will move to
-the next macro-task in the normal flow.

@@ -61,7 +61,8 @@ structured workflow:
 3. **Tasks** are decomposed into atomic, testable micro-tasks
 4. **Implementation** happens one micro-task at a time, with a fresh
    session each
-5. **Review** is automatic and layered (code quality + security)
+5. **Review** is layered: security review automatic where it matters,
+   code review on demand per micro-task and mandatory at wrap-up
 6. **Documentation** stays synchronized with the code at every step
 
 The aim is reproducibility and auditability. Every decision leaves a
@@ -143,9 +144,9 @@ your-project/
 └── .github/workflows/                 # CI/CD (edited from _project/)
 ```
 
-**Note on workspaces**: OpenCode loads a single `opencode.json` per
-session. To keep project-level and service-level configurations
-isolated, each level is its own workspace:
+**Note on workspaces**: the project level and each service are
+separate OpenCode workspaces, side by side (no `opencode.json` at the
+monorepo root), so their configs and agents never mix:
 
 - Run `cd _project && opencode` for project-level work (PDR,
   architecture, contracts, scaffolding)
@@ -259,12 +260,12 @@ Switch primary agents (planner ↔ builder) with `Tab`. The builder invokes
 `@code-reviewer` on request; the planner invokes both in aggregate at
 wrap-up.
 
-> **Why two workspaces?** OpenCode loads a single `opencode.json` per
-> session — the one in the directory where you launch `opencode`. It
-> does not merge nested configs. To keep project-level and
-> service-level concerns properly isolated (different agents,
-> different models, different context), each level is its own
-> workspace. The `_project/` folder is **not a service** — it's the
+> **Why two workspaces?** OpenCode reads the `opencode.json` and the
+> `.opencode/agents/` folders found from the directory where you launch
+> it up the tree, into one agent namespace. Putting project-level and
+> service-level agents on the same path would mix them. So each level
+> is its own workspace, side by side, with no `opencode.json` at the
+> monorepo root. The `_project/` folder is **not a service** — it's the
 > project workspace, sitting alongside the service folders.
 
 ### Workflow

@@ -96,7 +96,7 @@ reads these with its read tools at session/task start, per the
 
 | File / pattern                        | Read when…                                      |
 | -------------------------------------- | ----------------------------------------------- |
-| `../sdd.config.yaml`                  | **Always**, at session start: CI, git and versioning settings |
+| `../sdd.config.yaml`                  | At session start (planner, builder): CI, git and versioning settings |
 | `../_project/.docs/PDR.md`            | Planning work that touches requirements         |
 | `../_project/.docs/architecture.md`   | Cross-service architecture                      |
 | `../_project/.docs/contracts/*`       | Service contracts (interfaces to others)        |
@@ -113,7 +113,7 @@ reads these with its read tools at session/task start, per the
 | `.docs/tasks/tasks.md`                 | Picking up work / checking macro-task state     |
 | `.docs/tasks/task-log.md`              | Chronological timeline of task events (append-only) |
 | `.docs/tasks/[v<x.y>/]<id>.md`          | Macro-task ledger: Summary, Plan, Micro-tasks, Emergent decisions, Wrap-up |
-| `.docs/tasks/[v<x.y>/]<id>.log.md`      | Execution log of the macro-task — append-only; read at wrap-up only |
+| `.docs/tasks/[v<x.y>/]<id>.log.md`      | Execution log — append-only; read at wrap-up (and dependencies at detailing) |
 | `.docs/express-log.md`                 | Auditing recent quick fixes made in express mode |
 
 > **Never load whole contracts.** A single `external-<provider>.yaml`
@@ -553,7 +553,7 @@ service. Instead:
   description
 - Stop and surface the issue to the user
 - The change is then handled from the `_project/` workspace in a separate session
-  (planner at project level updates `../_project/.docs/contracts/*` and
+  (`principal` updates `../_project/.docs/contracts/*` and
   coordinates impacted services)
 
 ## Handling significant changes
@@ -599,7 +599,7 @@ SDD-KEEP: <reason>, see <reference>
 
 Examples:
 
-- `SDD-KEEP: backward compat for v1 API, remove after v2 migration (see task-12 ledger, ED-07)`
+- `SDD-KEEP: backward compat for v1 API, remove after v2 migration (see 12-ref-services ledger, ED-07)`
 - `SDD-KEEP: feature-flagged, activated by FEATURE_X (see specs.md)`
 - `SDD-KEEP: temporary parallel impl during migration to NewService, remove in 12-ref-services`
 
@@ -683,7 +683,7 @@ strict templates; this section is the high-level reference.
 | `tasks.md`                          | planner           | **One line per macro-task** in every section; details live in the ledger |
 | `task-log.md`                       | planner           | Append-only timeline, one line (≤ 200 chars) per event; never reorder |
 | `<id>.md` (macro-task ledger)       | planner (+ builder for ED entries) | Summary (≤ 30 lines, at wrap-up), Plan (immutable, 100-300 lines), Micro-tasks, Emergent decisions (≤ 10 lines each), Wrap-up (outcome lines). Read at detailing and wrap-up |
-| `<id>.log.md` (execution log)       | builder + reviewers | Append-only. Completion log ≤ 15 lines; a clean review is one line. Read only at wrap-up (and for dependencies at detailing) |
+| `<id>.log.md` (execution log)       | builder + reviewers | Append-only. Completion log ≤ 15 lines; a clean review is one line. Read at wrap-up, and at detailing only for the micro-tasks the current one depends on |
 | `.docs/security-issues.md`          | security-reviewer | Open + recently-closed only; archive older closed   |
 | `.docs/findings/<framework>.md`     | builder           | Append-only raw framework findings; promote to `<framework>-findings` skill at 2 hits. See `findings-workflow` skill |
 | `.docs/architecture/architecture.md`| planner           | Split into `modules/<x>.md` if > ~300 lines         |
