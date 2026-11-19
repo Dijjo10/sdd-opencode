@@ -1,6 +1,6 @@
 ---
 name: architect-service
-description: Methodology for architectural work at the service level, across three modes: initial service setup, macro-task planning (design before decomposition), and macro-task consolidation (updating module docs after implementation). Produces foundational docs in setup mode, the Plan section of the macro-task ledger in planning mode, and modules/<n>.md updates in consolidation mode. Invoked by the service-level planner.
+description: "Methodology for architectural work at the service level, across three modes: initial service setup, macro-task planning (design before decomposition), and macro-task consolidation (updating module docs after implementation). Produces foundational docs in setup mode, the Plan section of the macro-task ledger in planning mode, and modules/<n>.md updates in consolidation mode. Invoked by the service-level planner."
 ---
 
 # architect-service
@@ -242,7 +242,7 @@ Setup is complete when:
 ## Mode 2 — macro-task-planning
 
 Activated when the planner enters **architecture mode** for a new
-macro-task (status `pending`, ledger `task-NN-<n>.md` does not exist yet, or exists with empty Plan section).
+macro-task (status `pending`, ledger `<id>.md` does not exist yet, or exists with empty Plan section).
 
 ### Input
 
@@ -254,62 +254,66 @@ macro-task (status `pending`, ledger `task-NN-<n>.md` does not exist yet, or exi
 
 ### What you produce
 
-**The Plan section** of the macro-task ledger: `.docs/tasks/task-NN-<n>.md`. The ledger file is created if it doesn't exist; if it exists with an empty Plan section, the section is filled.
+**The `## Plan` section** of the macro-task ledger `<id>.md`. If the
+ledger does not exist yet, first create it from the **ledger skeleton**
+in the `task-decomposition` skill (header lines, empty `## Summary`), then
+fill `## Plan` with the template below. If it exists with an empty Plan,
+fill only that section.
 
-This file captures the architectural intent of the macro-task before
+The Plan captures the architectural intent of the macro-task before
 decomposition. It is the answer to "how are we going to build this?".
 
 ````markdown
-# Plan — task-NN-<n>
+## Plan
 
 > Architectural plan for this macro-task, produced before decomposition
 > into micro-tasks. Captures intent, design decisions, and approach.
-> This file is the architectural baseline of the macro-task — it is
+> This section is the architectural baseline of the macro-task — it is
 > written once, before micro-task decomposition, and referenced
 > throughout implementation.
 
-## Objective
+### Objective
 
 <What this macro-task introduces or changes in the service.
 1-3 sentences, high level. Focus on the "why" and the "what", not
 the "how" (that's in Architecture below).>
 
-## Scope
+### Scope
 
-### In scope
+#### In scope
 - <Bullet list of what this macro-task delivers>
 
-### Out of scope
+#### Out of scope
 - <Explicit exclusions. Things that might seem related but are not
   being done here. Surface them so future work is not ambiguous.>
 
-## Architecture
+### Architecture
 
 <Describe the module, feature, or flow being introduced or modified.
 Responsibilities, boundaries, how it fits into the existing service.
 Reference `architecture.md` and existing `modules/*.md` when
 relevant — don't duplicate their content.>
 
-### Components
+#### Components
 
 <Main components, classes, or files that will exist at the end.
 This is the skeleton, not an exhaustive file listing. 3-7 items.>
 
-### Flows
+#### Flows
 
 <Primary flows or sequences introduced or modified. Narrative or
 numbered steps. Reference external systems where they interact.>
 
-### Integration
+#### Integration
 
 <How this macro-task's output integrates with:
 - Existing modules in this service
 - Other services (if any — reference contracts)
 - External systems (databases, APIs, queues, etc.)>
 
-## Design decisions
+### Design decisions
 
-### D-01 — <Short title>
+#### D-01 — <Short title>
 
 - **Context**: <1-2 sentences: what forced this decision>
 - **Decision**: <what was chosen>
@@ -318,19 +322,19 @@ numbered steps. Reference external systems where they interact.>
 - **Rationale**: <why this over alternatives>
 - **Consequences**: <what this enables, constrains, or costs>
 
-### D-02 — …
+#### D-02 — …
 
 <Repeat for each significant decision. Not every small choice — only
 decisions that would surprise a reader or that affect implementation
 direction.>
 
-## Risks and open questions
+### Risks and open questions
 
 - <Known risks being accepted at plan time>
 - <Open questions that will be resolved during implementation — be
   explicit about the fact that they're open>
 
-## Approach
+### Approach
 
 <High-level sequence describing how implementation will unfold. This
 is what guides the decomposition in the next phase. Example:
@@ -392,7 +396,8 @@ stable documentation.
 ### Input
 
 - The Plan section of the macro-task ledger (architectural intent)
-- All `micro-task-*.md` completion logs of the macro-task
+- The execution log `<id>.log.md` (completion logs of all
+  micro-tasks of the macro-task)
 - The Emergent decisions section of the ledger if non-empty (emergent decisions surfaced
   during detailing and implementation — may differ from or refine
   what the Plan assumed)
@@ -437,7 +442,7 @@ Updates or creations in `.docs/architecture/`:
 
 <Stable decisions promoted from the macro-task's Plan section. Use the
 same format as architectural decisions in architecture.md.
-Reference `.docs/tasks/task-NN-<n>.md` (Plan section) for full context.>
+Reference `<id>.md` (Plan section) for full context.>
 
 ## 7. Known limitations
 
@@ -445,7 +450,7 @@ Reference `.docs/tasks/task-NN-<n>.md` (Plan section) for full context.>
 
 ## 8. Changelog
 
-- <date>: created during task-NN-<n>
+- <date>: created during <id>
 ````
 
 **Updated `modules/<n>.md`** if the macro-task modified existing
@@ -487,7 +492,7 @@ globally. Add a changelog entry.
 ### Style in macro-task-consolidation mode
 
 - **Promote, don't invent**. Everything you write should trace back
-  to the Plan, completion logs (Execution logs section), or actual code. Don't invent
+  to the Plan, completion logs (execution log), or actual code. Don't invent
   architecture that wasn't there.
 - **Stability over completeness**. Document what's stable. Things
   still in flux (TODO comments, known issues) belong in "Known
@@ -509,8 +514,8 @@ Consolidation is complete when:
 
 ## Updating architecture during a refactor
 
-A refactor is a macro-task with corrective intent (name prefixed
-`task-NN-refactor-`). When you're invoked for a refactor task, you
+A refactor is a macro-task with corrective intent (type `ref`, e.g.
+`07-ref-persistence`). When you're invoked for a refactor task, you
 operate in the **same three modes** as for any macro-task:
 
 - **Mode 2 (macro-task-planning)**: write the Plan section of the
@@ -535,9 +540,9 @@ When operating in Mode 3 (consolidation) for a refactor:
   refactor task's Plan section, not in the architecture doc itself.
 - **Changelog entry**. In the `Changelog` section of `specs.md` or
   `architecture.md`, add an entry like:
-  `- <date>: architecture updated for refactor task-NN-refactor-<n>`.
+  `- <date>: architecture updated for refactor <id>`.
 - **Modules may be created or removed**. If the refactor introduced
   a new module boundary, create its `modules/<n>.md` reflecting the
   current implementation. If the refactor eliminated a module,
   delete its `modules/<n>.md` — the file is no longer relevant. The
-  history is in the refactor task's Plan section and Execution logs.
+  history is in the refactor task's Plan section and execution log.

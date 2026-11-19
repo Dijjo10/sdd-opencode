@@ -1,0 +1,41 @@
+# sdd.config.yaml — SDD pattern settings for this monorepo.
+#
+# Lives at the monorepo root, next to `_project/` and the service folders.
+# `principal`, `planner` and `builder` read it at session start (it is
+# small on purpose). `principal` owns it: it creates it during project
+# setup and edits it only on explicit user request.
+#
+# If this file is missing, agents behave as if:
+#   ci.provider: none, git.remote: none, versioning.enabled: false
+
+version: 1
+
+ci:
+  # none   — no CI pipeline. No CI gate anywhere.
+  # github — GitHub Actions (.github/workflows/*.yml)
+  # gitlab — GitLab CI (.gitlab-ci.yml)
+  # other  — another system; list its definition files in `files`.
+  provider: none
+  # Optional: explicit pipeline definition files. Empty = auto-detect
+  # from the provider's default location.
+  files: []
+
+git:
+  # github — branches pushed and merged through pull requests (gh CLI)
+  # other  — any other remote: branches are pushed, merge is manual
+  # none   — local repository only: no push, no PR
+  remote: none
+  # github-flow — short-lived branches from `main`, merged back to `main`
+  # git-flow    — branches from `develop`; releases go `develop` → `main`
+  flow: github-flow
+  # task    — one branch per macro-task (best with one service at a time,
+  #           or one worktree per service)
+  # version — one branch per version, shared by all services
+  branch_per: task
+
+versioning:
+  # true — tasks are grouped by version (.docs/tasks/v<major>.<minor>/),
+  #        and a version is closed with a CHANGELOG entry and a git tag.
+  enabled: false
+  # The version currently being built, e.g. "0.2".
+  current: "0.1"

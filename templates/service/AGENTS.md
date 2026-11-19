@@ -19,6 +19,19 @@ For the full functional spec see `.docs/specs.md` (already in your context).
 - **Build / deps**: <build tool and dependency manager>
 - **Test**: <test framework(s) and any integration test tooling>
 
+### Quality checks
+
+The commands that make up this service's **quality gate** (lint, format
+check, type-check, tests). When `ci.provider` in `../sdd.config.yaml`
+is not `none`, the CI pipeline definition is the source of truth and
+this list must mirror it; otherwise this list is the only definition.
+
+- <e.g. `<linter> check .`>
+- <e.g. `<formatter> --check .`>
+- <e.g. `<test runner>`>
+
+*(Leave empty if not defined yet — the gate then runs build + tests only.)*
+
 Skills specific to this service (design system, framework conventions,
 testing patterns, etc.) live under `.opencode/skills/`. Agents load
 them autonomously based on the skill descriptions when relevant to
@@ -29,52 +42,68 @@ the current work.
 ```
 .
 ├── AGENTS.md                              # ← you are here
-├── opencode.json                          # eager-loaded context + default_agent
+├── opencode.json                          # instructions, permissions, default_agent
 ├── .opencode/
 │   ├── agents/
-│   │   ├── planner.md                     # primary — heavy model, doc + planning
-│   │   ├── builder.md                     # primary — light model, code + tests
-│   │   ├── code-reviewer.md               # subagent — heavy model, fixes + doc updates
-│   │   └── security-reviewer.md           # subagent — heavy model, read-only + report
+│   │   ├── planner.md                     # primary — docs + planning, no source code
+│   │   ├── builder.md                     # primary — code + tests
+│   │   ├── code-reviewer.md               # subagent — fixes + doc updates
+│   │   └── security-reviewer.md           # subagent — read-only + report
 │   └── skills/
 │       ├── architect-service/             # methodology: internal architecture
-│       ├── task-decomposition/            # methodology: macro → micro tasks
+│       ├── task-decomposition/            # task IDs, ledger + log, budgets, compaction
+│       ├── wrap-up/                       # planner wrap-up procedure
+│       ├── git-workflow/                  # branches, PR, CI, merge, tags
+│       ├── express-mode/                  # trivial changes
+│       ├── free-mode/                     # untracked changes
+│       ├── refactor-mode/                 # changes of direction
+│       ├── findings-workflow/             # framework findings → skills
 │       └── <stack-name>/                  # stack-specific conventions (optional)
 ├── .docs/
-│   ├── specs.md                           # eager: planner, builder, reviewers
-│   ├── security-issues.md                 # eager: planner, security-reviewer only
+│   ├── specs.md                           # eager (root instructions): every agent
+│   ├── security-issues.md                 # mandatory read: security-reviewer
 │   ├── architecture/
-│   │   ├── architecture.md                # eager: planner, builder, reviewers
+│   │   ├── architecture.md                # mandatory read: planner, builder, reviewers
 │   │   └── modules/
 │   │       └── <module-name>.md           # lazy: read when working on module
 │   ├── infra/
-│   │   ├── server.md                      # eager: planner, builder
-│   │   └── ops.md                         # eager: planner only (lazy for builder)
+│   │   ├── server.md                      # mandatory read: planner, builder
+│   │   └── ops.md                         # read when touching deploy/ops
 │   ├── findings/                          # lazy: raw framework findings log
 │   │   └── <framework>.md                 # append-only; see findings-workflow skill
 │   └── tasks/                             # lazy: navigate as workflow requires
-│       ├── tasks.md                       # macro-tasks index (grouped by state)
-│       ├── task-log.md                    # chronological append-only timeline
-│       ├── task-01-name.md                # ledger: Plan, Micro-tasks, Decisions, Logs
-│       ├── task-02-name.md                # one ledger file per macro-task
-│       └── ...
+│       ├── tasks.md                       # macro-tasks index, one line each
+│       ├── task-log.md                    # chronological timeline, one line per event
+│       ├── v0.2/                          # version folder (only if versioning is on)
+│       │   ├── 03-feat-auth.md            # ledger: Summary, Plan, Micro-tasks, ED, Wrap-up
+│       │   └── 03-feat-auth.log.md        # execution log (read at wrap-up only)
+│       └── backlog/                       # macro-tasks not assigned to a version
 └── <source-tree>/                         # service code (layout depends on stack)
 ```
 
 ## Documentation map
 
-**Already in your context** (no need to re-read):
+**Already in your context** (loaded via root `instructions` in
+`opencode.json` — no need to re-read):
 
 | File                                 | Purpose                                         |
 | ------------------------------------ | ----------------------------------------------- |
-| `../_project/.docs/PDR.md`                    | Project requirements                            |
-| `../_project/.docs/architecture.md`           | Cross-service architecture                      |
-| `../_project/.docs/contracts/*`               | Service contracts (interfaces to others)        |
 | `.docs/specs.md`                     | What this service does / does not do            |
-| `.docs/architecture/architecture.md` | Internal architecture                           |
-| `.docs/infra/server.md`              | Server, env, configuration                      |
-| `.docs/infra/ops.md`                 | CI/CD, deployment                               |
-| `.docs/security-issues.md`           | Open & recently-closed security issues          |
+
+**Mandatory reads** (lazy by mechanism, mandatory by role — each agent
+reads these with its read tools at session/task start, per the
+**Context partitioning** table below):
+
+| File / pattern                        | Read when…                                      |
+| -------------------------------------- | ----------------------------------------------- |
+| `../sdd.config.yaml`                  | At session start (planner, builder): CI, git and versioning settings |
+| `../_project/.docs/PDR.md`            | Planning work that touches requirements         |
+| `../_project/.docs/architecture.md`   | Cross-service architecture                      |
+| `../_project/.docs/contracts/*`       | Service contracts (interfaces to others)        |
+| `.docs/architecture/architecture.md`  | Internal architecture                           |
+| `.docs/infra/server.md`               | Server, env, configuration                      |
+| `.docs/infra/ops.md`                  | Deployment / ops                                |
+| `.docs/security-issues.md`            | Open & recently-closed security issues          |
 
 **Lazy-loaded** (read when relevant):
 
@@ -83,51 +112,66 @@ the current work.
 | `.docs/architecture/modules/*.md`      | Working on the corresponding module             |
 | `.docs/tasks/tasks.md`                 | Picking up work / checking macro-task state     |
 | `.docs/tasks/task-log.md`              | Chronological timeline of task events (append-only) |
-| `.docs/tasks/task-NN-*.md`             | Macro-task ledger: Plan, Micro-tasks, Decisions, Execution logs all in one |
+| `.docs/tasks/[v<x.y>/]<id>.md`          | Macro-task ledger: Summary, Plan, Micro-tasks, Emergent decisions, Wrap-up |
+| `.docs/tasks/[v<x.y>/]<id>.log.md`      | Execution log — append-only; read at wrap-up (and dependencies at detailing) |
 | `.docs/express-log.md`                 | Auditing recent quick fixes made in express mode |
+
+> **Never load whole contracts.** A single `external-<provider>.yaml`
+> can be hundreds of KB. Read the index/sections you need, not the
+> whole file.
 
 ## Context partitioning
 
-Each agent has a **partitioned set of eager-loaded documents**, declared
-per-agent in `opencode.json`. This avoids saturating the context of
-focused agents (builder, reviewers) with documents that are only
-relevant to broad orchestration (planner).
+`instructions` exists **only at the root** of `opencode.json`. There is
+no per-agent variant: an `instructions` key inside an `agent` block is
+invalid config — opencode forwards it to the model provider as an
+unknown option (silent no-op or hard error, depending on provider).
+To change what an agent reads, edit the tables in this file and the
+agent's `.opencode/agents/<name>.md`. Keep the root `instructions`
+list minimal: it is injected into every agent — internal ones included
+(`title`, `compaction`).
 
-Eager-loaded by agent:
+Context partitioning is achieved through **mandatory reads**: each
+agent reads its docs with normal read tools at session/task start.
 
-| Agent              | Eager-loaded docs                                                                 |
-| ------------------ | --------------------------------------------------------------------------------- |
-| `planner`          | PDR, project arch, contracts, specs, service arch, server, ops, security-issues   |
-| `builder`          | specs, service arch, server                                                       |
-| `code-reviewer`    | specs, service arch                                                               |
-| `security-reviewer`| specs, service arch, security-issues                                              |
+| Agent              | Mandatory reads at start                                            |
+| ------------------ | -------------------------------------------------------------------- |
+| `planner`          | `../sdd.config.yaml`, service arch, server; PDR / contracts / ops / security-issues when the session touches them |
+| `builder`          | `../sdd.config.yaml`, service arch, server                           |
+| `code-reviewer`    | service arch                                                         |
+| `security-reviewer`| service arch, security-issues                                        |
 
-Documents not eager-loaded for an agent can still be read on demand
-with `cat` or other read tools when the work requires it. The partition
-optimizes the default state, not the maximum reachable state.
+Documents outside an agent's mandatory set can still be read on demand
+when the work requires it. The partition optimizes the default state,
+not the maximum reachable state. Never point a root `instructions`
+glob at `../_project/.docs/contracts/` — external provider contracts
+can be enormous (see the warning above).
 
-If you customize the agents or add new ones, set their `instructions`
-field appropriately in `opencode.json`. Resist the temptation to load
-"everything just in case" — it degrades instruction-following on the
-relevant work.
+Resist the temptation to load "everything just in case" — it degrades
+instruction-following on the relevant work.
 
 ## Agents in this service
 
-- **`planner`** (default at session start) — heavy/reasoning model.
-  Triages session, plans tasks, writes documentation, runs wrap-up at
-  macro-task completion. Cannot touch source code.
-- **`builder`** — light/fast model. Implements micro-tasks: writes code,
-  tests, iterates with build/test cycles. Auto-accepts edits within the
-  micro-task perimeter. Automatically invokes reviewers at completion.
-- **`@code-reviewer`** — subagent, heavy/reasoning model. Reviews builder
-  output, applies fixes directly to code and docs.
-- **`@security-reviewer`** — subagent, heavy/reasoning model. Read-only.
-  Produces security report inline in the micro-task log and updates
+- **`planner`** (default at session start). Triages session, plans
+  tasks, writes documentation, runs wrap-up at macro-task completion.
+  Cannot touch source code.
+- **`builder`**. Implements micro-tasks: writes code, tests, iterates
+  with build/test cycles. Auto-accepts edits within the micro-task
+  perimeter. Invokes `@security-reviewer` automatically when the
+  micro-task is flagged `security-relevant: true`; `@code-reviewer` on
+  explicit request.
+- **`@code-reviewer`** — subagent. Reviews builder output, applies fixes
+  directly to code and docs. On demand per micro-task, mandatory at
+  wrap-up (aggregate review of the macro-task).
+- **`@security-reviewer`** — subagent. Read-only. Produces a security
+  report inline in the micro-task log and updates
   `.docs/security-issues.md`. Invoked only when the micro-task is flagged
-  `security-relevant: true`.
+  `security-relevant: true`, and in aggregate at wrap-up.
 
-Switch primary agents with `Tab`. Subagents are invoked automatically by
-the builder; you can also invoke them manually with `@name` at any time.
+Switch primary agents with `Tab`. Subagents are invoked by the builder
+(security-reviewer automatically when flagged, code-reviewer on request)
+or by the planner at wrap-up; you can also invoke them manually with
+`@name` at any time.
 
 > **Note on workspace separation**: this service is its own OpenCode
 > workspace. The project-level workspace (`_project/` in the monorepo)
@@ -172,7 +216,10 @@ agent are declared **once** in your global OpenCode config at
 `~/.config/opencode/opencode.json`, not in this project's
 `opencode.json`. This keeps personal model preferences out of the
 repository. They are not touched by the planner's configuration
-sync.
+sync. Recommended split (from field use): `planner` and `builder` run
+high-frequency work (triage, detailing, implementation) and can use a
+light/fast model; `code-reviewer` and `security-reviewer` carry the
+judgment-heavy gates and deserve a heavy/reasoning model.
 
 ## Session behavior
 
@@ -233,7 +280,7 @@ architectural plan. The planner enters architecture mode and:
 - Works with the user conversationally to define objective, scope,
   module/feature architecture, design decisions (with alternatives
   and rationale), risks, and approach
-- Produces the Plan section of `.docs/tasks/task-NN-<n>.md` (creating the ledger if needed)
+- Produces the Plan section of `<id>.md` (creating the ledger if needed)
 - Waits for explicit user approval
 
 Architecture mode typically **chains directly into planning mode** in
@@ -244,7 +291,7 @@ without context switching.
 
 With the Plan approved, the planner invokes `task-decomposition`
 skill to break the macro-task into atomic micro-tasks in
-the Micro-tasks section of `task-NN-<n>.md`. Each micro-task is tagged with
+the Micro-tasks section of `<id>.md`. Each micro-task is tagged with
 `security-relevant: true|false` and includes objective, acceptance
 criteria, required tests, and likely impacted files.
 
@@ -276,28 +323,29 @@ User switches to `builder`. Builder:
   field. Full suite runs at wrap-up, not per-micro-task.
 - Applies any documentation updates triggered by the change
   (see **Documentation sync rules** below)
-- Appends a **completion log** subsection to the Execution logs section
-  of `task-NN-<n>.md`, documenting the test subset that was run
+- Appends a **completion log** (≤ 15 lines) to the execution log
+  `<id>.log.md`, documenting the test subset that was run
 
-### 7. Automatic review chain (builder → subagents)
+### 7. Review chain (builder → subagents)
 
-When builder has finished the implementation and completion log, it
-**automatically invokes the review chain**:
+When builder has finished the implementation and completion log:
 
-- Announces in chat: "Implementation complete. Invoking @code-reviewer
-  automatically. Interrupt now if you want to skip."
-- Invokes `@code-reviewer` via the task tool. Code-reviewer reviews
-  diff + plan adherence, applies fixes directly to code and docs, and
-  appends a **review changes** subsection within the current micro-task's Execution log.
-- If the micro-task is flagged `security-relevant: true`, announces:
-  "Code review complete. Micro-task is security-relevant. Invoking
+- If the micro-task is flagged `security-relevant: true`, the builder
+  announces: "Micro-task is security-relevant. Invoking
   @security-reviewer. Interrupt to skip." Then invokes
-  `@security-reviewer` which runs read-only analysis, appends a
-  **security review** subsection within the current micro-task's Execution log, and updates
-  `.docs/security-issues.md` if new issues are found.
-
-The user can interrupt between announcement and invocation, or invoke
-reviewers manually with `@name` at any time.
+  `@security-reviewer`, which runs read-only analysis, appends a
+  **security review** subsection to the current micro-task's block in
+  the execution log `<id>.log.md`, and updates `.docs/security-issues.md` if new issues
+  are found.
+- **Code review is on demand**: per-micro-task code review is **not
+  invoked automatically** — with passing tests, forward progress is
+  preferred. The user can request it at any time ("run code review")
+  or invoke `@code-reviewer` directly; the code-reviewer reviews diff +
+  plan adherence, applies fixes directly to code and docs, and appends
+  a **review changes** subsection to the current micro-task's block in
+  the execution log `<id>.log.md`.
+- Aggregate code quality is reviewed **at the macro-task wrap-up**
+  (mandatory — see step 10).
 
 ### 8. Commit proposal
 
@@ -313,16 +361,17 @@ builder proposes a git commit:
 - Shows the proposed message and the files to be staged
 - Waits for the user's confirmation
 
-On confirmation, the builder runs `git add <files>` (selective, never
-`-A`) and `git commit -m "<message>"`. The commit hash is reported
-in the final summary.
+On confirmation, the builder runs `git add -- <files> && git commit -m "<message>" -- <files>`
+(explicit paths, never `-A`). The commit hash is reported in the final
+summary.
 
 If the user declines or prefers to commit manually, the builder skips
 the commit and leaves the working directory ready. The user commits on
 their own terms.
 
-The builder never runs `git push` — pushing is always an explicit user
-action afterward.
+The builder never pushes. Integration (push, pull request, CI, merge)
+happens once per macro-task, at the end of wrap-up — see **Git
+workflow** below.
 
 ### 9. End of session
 
@@ -335,10 +384,12 @@ micro-task automatically** — open a fresh session for the next one.
 > Procedure: gather the files actually touched; build a Conventional
 > Commits message (`type(scope): summary`) with a footer referencing the
 > relevant `Task:`/`Micro-task:`/ledger; show the message and the files to
-> stage; wait for confirmation; on confirmation run `git add <files>`
-> (selective, never `-A`) and `git commit -m "<message>"`, then report the
-> hash; if the user declines, skip and leave the tree ready. Never
-> `git push`. This gate applies to every agent (`planner`, `builder`,
+> stage; wait for confirmation; on confirmation run
+> `git add -- <files> && git commit -m "<message>" -- <files>` (explicit paths, never `-A` or
+> `.` — other services may share the checkout), then report the hash;
+> if the user declines, skip and leave the tree ready. Never push during
+> a session: push, pull request and merge happen only in the
+> integration step at the end of wrap-up (`git-workflow` skill). This gate applies to every agent (`planner`, `builder`,
 > `principal`) and is most often skipped at two points: **after a
 > macro-task Plan is approved** (planning mode) and at the **end of
 > wrap-up** — do not skip it there.
@@ -347,7 +398,8 @@ micro-task automatically** — open a fresh session for the next one.
 
 When triage detects a macro-task with status `wrap-up-pending`, planner:
 
-- Reads the macro-task ledger (Plan + Execution logs) to
+- Reads the macro-task ledger (Plan, Micro-tasks, Emergent decisions)
+  and its execution log `<id>.log.md` to
   build an aggregate view of what was built vs what was planned
 - Invokes `@code-reviewer` in **aggregate wrap-up mode** to review
   the cumulative diff of the entire macro-task — catches cross-cutting
@@ -372,7 +424,27 @@ When triage detects a macro-task with status `wrap-up-pending`, planner:
   those changes; proposes fixes if discrepancies are found
 - Scans for residual dead code across the aggregate diff
 - Transitions macro-task status `wrap-up-pending → done`
+- **Integrates the branch** per `sdd.config.yaml` (`git-workflow`
+  skill): push, pull request, CI checks, merge on user approval — or
+  a local merge, or nothing, depending on `git.remote`
 - Surfaces the next macro-task
+
+## Git workflow
+
+Driven by the `git` and `ci` sections of `../sdd.config.yaml` and
+executed through the `git-workflow` skill:
+
+- **Macro-task start** (planning mode): the planner creates the task
+  branch (`branch_per: task`) or joins the version branch
+  (`branch_per: version`).
+- **During micro-tasks**: commits only, with explicit paths. No branch
+  switch, merge, rebase or stash — other services may share the
+  checkout.
+- **End of wrap-up**: integration — push, pull request, CI checks,
+  merge on user approval (GitHub), or the equivalent for `other` /
+  `none`.
+- **Version close** (`versioning.enabled: true`): owned by `principal`
+  — changelog, release merge, tag.
 
 ## UI work — mockups are the source of truth (frontend services only)
 
@@ -417,130 +489,36 @@ do both, then stop. Never chain silently.
 
 ## Express mode
 
-Not every change deserves the full pipeline. For trivial work — typo
-fixes, dependency bumps, config tweaks, minor renames — both planner
-and builder support **express mode**, which bypasses micro-task
-decomposition and documentation tracking while keeping the code-reviewer
-as a safety net.
-
-### When it applies
-
-Express mode is appropriate when **all** of the following hold:
-
-- The change is small and self-contained
-- Does not affect specs, architecture, or module docs
-- Is not security-relevant (auth, crypto, input validation, secrets)
-- Does not touch cross-service contracts
-- Does not introduce or remove a module or major flow
-- Does not modify persistence schema
-
-If any of these fails, use the normal flow.
-
-### How it's triggered
-
-Express mode is **user-initiated or auto-suggested**. Ways to activate:
-
-- User explicitly asks: "quick fix", "express mode", "modalità express",
-  "just a typo"
-- User describes a change that the planner recognizes as trivial, in
-  which case the planner proposes express mode and waits for confirmation
-
-Never force express mode on a request — always confirm with the user
-before proceeding.
-
-### What happens in express mode
-
-- Planner produces a one-line plan in chat (no files created)
-- Builder implements the change
-- Builder runs build + tests
-- Builder invokes `@code-reviewer` (safety net, even for trivial work)
-- If code-reviewer modifies code, builder re-runs build + tests
-- Builder appends a one-line entry to `.docs/express-log.md`
-- Builder proposes a commit (Conventional Commits format, no SDD
-  footer, just `Ref: .docs/express-log.md`) and waits for user
-  confirmation — same as the normal flow
-- Session ends
-
-### What express mode does NOT produce
-
-- No entry in any Micro-tasks section
-- No subsection in any Execution logs section
-- No `decisions.md` entry
-- No status change in `tasks.md`
-- No security-review (by constraint, express excludes security-relevant
-  changes)
-
-### The express log
-
-`.docs/express-log.md` is a lightweight cronological register. One line
-per fix, grouped by date. Example:
-
-```markdown
-# Express fixes log
-
-Quick fixes and minor changes that didn't go through the full SDD
-pipeline. For substantial changes, see `tasks/`.
-
-## 2026-04-23
-- Bumped dep X from A to B (patch) — <manifest file>
-- Fixed typo in error message "invlaid" → "invalid" — <file>
-
-## 2026-04-22
-- Increased request timeout from 30s to 60s — <config file>
-```
-
-The log is lazy-loaded (not in `opencode.json` instructions). Read it
-when you need to audit recent quick fixes.
+For trivial work — typo fixes, dependency bumps, config tweaks, minor
+renames — planner and builder support **express mode**: no micro-task
+decomposition, no documentation tracking, but build + tests and the
+quality gate stay mandatory and a commit is proposed. Express is **not**
+allowed for anything touching specs, architecture, contracts, security,
+persistence schema or public interfaces. The only record is one line in
+`.docs/express-log.md`. Full procedure: `express-mode` skill.
 
 ## Free mode
 
-For changes the user wants to make **without any SDD ceremony at
-all** — exploratory edits, prototypes, personal tweaks — the builder
-also supports **free mode**.
-
-**How to activate**: open a session, switch directly to the `builder`
-agent with `Tab` (skipping the planner), and give your implementation
-request. The builder detects the absence of a planner-produced plan
-and the absence of an "express mode confirmed" announcement, and
-treats the request as free mode.
-
-**What free mode does**:
-- The builder asks for explicit confirmation before proceeding
-- It implements the change as requested
-- Optionally runs tests if relevant
-- Optionally proposes a commit (Conventional Commits format, no SDD
-  task footer)
-
-**What free mode does NOT do**:
-- No plan, no micro-task ledger, no `tasks.md` entry
-- No documentation sync
-- No code-reviewer or security-reviewer invocation
-- **No tracking** anywhere — not even an `express-log.md` line. Free
-  mode is intentionally untracked: there is no audit trail.
-- No status transitions
-
-**When to use it**: when you know what you want to do, the change is
-under your direct supervision, and the SDD overhead (even express)
-would slow you down. Typical cases: prototyping a new approach,
-quick experiments, throwaway scripts, personal tweaks to a config.
-
-**When NOT to use it**: anything that affects production code in a
-non-trivial way, anything security-sensitive, anything that future
-you (or a collaborator) would need to audit. The cost of going through
-the planner for those cases is very small; the value of having a
-trail is large.
-
-**Reverting to standard flow**: if mid-work you decide free mode was
-the wrong choice, switch to the planner with `Tab`. The builder
-summarizes what was done so far so the planner has context. The
-planner can then absorb the in-progress changes into a proper
-macro-task or suggest committing/reverting.
+Free mode is the user's explicit choice to skip SDD entirely: switch
+straight to `builder` with `Tab` and give an implementation request. The
+builder asks for confirmation, implements, optionally runs tests and
+proposes a commit — with **no** plan, ledger, review, doc sync or log
+line. Use it for experiments and personal tweaks, never for work someone
+will need to audit. Full procedure: `free-mode` skill.
 
 ## Documentation sync rules
 
 Documentation is **source of truth** and must stay aligned with the code
 at all times. Every agent that modifies code is responsible for propagating
 the change to the relevant documentation in the same micro-task.
+
+**Living docs describe the current state only.** `specs.md`,
+`architecture.md`, `modules/*.md` and `infra/*` say what the service *is*,
+not how it got there: rewrite the affected passage instead of appending
+"changed in task NN" notes inside the text or keeping superseded
+alternatives. History lives in the ledgers; the only trace of it in a
+living doc is its final `Changelog` section, one line per macro-task
+(`- <date>: <what changed> (<id>)`).
 
 ### Triggers — when to update what
 
@@ -576,86 +554,18 @@ service. Instead:
   description
 - Stop and surface the issue to the user
 - The change is then handled from the `_project/` workspace in a separate session
-  (planner at project level updates `../_project/.docs/contracts/*` and
+  (`principal` updates `../_project/.docs/contracts/*` and
   coordinates impacted services)
 
 ## Handling significant changes
 
-The default workflow (planner → builder → reviewers) is optimized for
-forward progress. Real software also goes through **significant
-changes**: specs shifting, architectural patterns being replaced, past
-decisions being invalidated, broad refactors. These are not exceptions —
-they're part of the lifecycle.
-
-### When to trigger refactor mode
-
-The planner has a dedicated **refactor mode** (see `planner.md`
-agent). It is **user-initiated**: the planner does not detect a
-refactor on its own. Trigger it explicitly when you know you're about
-to change direction:
-
-- "The spec for module X has changed, we need to redesign"
-- "Pattern Y isn't working, switch to Z across the service"
-- "Decision D-007 was wrong, we need to replace it and fix everything
-  downstream"
-
-The planner will then walk you through a structured flow: scoping
-(narrow / medium / wide), impact assessment, transitional state setup,
-doc updates, refactor macro-task creation.
-
-### Classification
-
-- **Narrow**: one spec, one flow, stays inside a macro-task. Handled
-  by re-planning the affected macro-task. No formal refactor mode.
-- **Medium**: one or more modules inside this service, invalidates
-  past decisions. Enters refactor mode. Produces a dedicated
-  `task-NN-refactor-<n>` macro-task.
-- **Wide**: service-level architecture, possibly cross-service. Must
-  start with a session from the `_project/` workspace to align the cross-service
-  story before the service-level refactor proceeds.
-
-### Convention: never delete history
-
-Decisions, task entries, and micro-task logs are **never deleted** —
-even when they become obsolete. Instead:
-
-- Decisions use status `superseded by <ref>` with a one-line reason.
-  The original text stays.
-- Macro-tasks and micro-tasks invalidated by a refactor use status
-  `blocked` (will resume) or `skipped` (abandoned). The entry stays
-  with a one-line reason pointing to the refactor.
-- Completion logs of micro-tasks whose code gets refactored remain
-  as-is — they document what was done at that moment in time.
-
-This preserves institutional memory. Anyone reading history in six
-months can reconstruct what was decided when and why it changed.
-
-### The refactor task — single source of truth
-
-A refactor is **a macro-task with corrective intent**. Same lifecycle as
-any other macro-task (architecture mode → planning → implementation →
-wrap-up), with two specializations: naming convention
-(`task-NN-refactor-<n>`) and an up-front impact mapping phase that
-marks superseded decisions and abandoned work without losing history.
-
-While the refactor task is active, its Plan section (in the macro-task
-ledger) is the source of truth for the **target architecture**. The
-planner surfaces in every triage that a refactor task is in progress,
-so anyone joining mid-refactor knows where to look.
-
-### Docs follow the code during a refactor
-
-`specs.md`, `architecture/architecture.md`, and module docs are **not**
-pre-updated when the refactor is started. They keep describing the
-current code reality. They are updated by the **wrap-up of the refactor
-task**, when the new code is in place — at that point the
-architect-service skill in consolidation mode synchronizes the docs to
-the new reality.
-
-This means there is a window during which the docs lag behind the
-target. That's intentional: the Plan section of the refactor task is
-where the target state lives until the refactor lands. Once the
-refactor task is `done`, normal doc-code coherence resumes.
+Specs shifting, patterns replaced, past decisions invalidated: these are
+part of the lifecycle. A **narrow** change is normal re-planning. A
+**medium** one (modules of this service, invalidates past decisions)
+becomes a macro-task of type `ref`, created after an impact mapping that
+marks superseded decisions and abandoned work — history is never
+deleted. A **wide** one (service-level or cross-service) starts from the
+`_project/` workspace. Full procedure: `refactor-mode` skill.
 
 ## Dead code & legacy hygiene
 
@@ -690,9 +600,9 @@ SDD-KEEP: <reason>, see <reference>
 
 Examples:
 
-- `SDD-KEEP: backward compat for v1 API, remove after v2 migration (decisions.md SI-decision-12)`
+- `SDD-KEEP: backward compat for v1 API, remove after v2 migration (see 12-ref-services ledger, ED-07)`
 - `SDD-KEEP: feature-flagged, activated by FEATURE_X (see specs.md)`
-- `SDD-KEEP: temporary parallel impl during migration to NewService, remove in task-NN`
+- `SDD-KEEP: temporary parallel impl during migration to NewService, remove in 12-ref-services`
 
 The marker must include a **reason** and a **reference** to a doc or
 task that justifies the retention. A naked `SDD-KEEP` with no reason is
@@ -771,9 +681,10 @@ strict templates; this section is the high-level reference.
 
 | File                                | Owner             | Growth strategy                                      |
 | ----------------------------------- | ----------------- | ---------------------------------------------------- |
-| `tasks.md`                          | planner           | Compact entries; completed go under `## Completed`   |
-| `task-log.md`                       | planner           | Append-only chronological timeline; `started` at planning, `wrapped up` at wrap-up. Never reorder/renumber |
-| `task-NN-<n>.md` (macro-task ledger)| planner + builder + reviewers | Single file with sections: Plan (immutable, 100-300 lines, planner-owned), Micro-tasks (planner-owned), Emergent decisions (lazy, planner+builder), Execution logs (append-only, builder+reviewers), Wrap-up (planner). Total file size grows with macro-task scope. If a single section grows excessively (e.g. Plan > 500 lines, Execution logs > 2000 lines), the macro-task is probably too big — split it. |
+| `tasks.md`                          | planner           | **One line per macro-task** in every section; details live in the ledger |
+| `task-log.md`                       | planner           | Append-only timeline, one line (≤ 200 chars) per event; never reorder |
+| `<id>.md` (macro-task ledger)       | planner (+ builder for ED entries) | Summary (≤ 30 lines, at wrap-up), Plan (immutable, 100-300 lines), Micro-tasks, Emergent decisions (≤ 10 lines each), Wrap-up (outcome lines). Read at detailing and wrap-up |
+| `<id>.log.md` (execution log)       | builder + reviewers | Append-only. Completion log ≤ 15 lines; a clean review is one line. Read at wrap-up, and at detailing only for the micro-tasks the current one depends on |
 | `.docs/security-issues.md`          | security-reviewer | Open + recently-closed only; archive older closed   |
 | `.docs/findings/<framework>.md`     | builder           | Append-only raw framework findings; promote to `<framework>-findings` skill at 2 hits. See `findings-workflow` skill |
 | `.docs/architecture/architecture.md`| planner           | Split into `modules/<x>.md` if > ~300 lines         |
@@ -792,3 +703,6 @@ suggestions (consolidate, split, archive) — never executes them silently.
   user instruction.
 - **Do** keep incremental files structured and short. Narrative belongs
   in chat, not in committed files.
+- **Do** check that a file exists with a read/stat on its **exact path**
+  before writing it — never with a glob (globs may skip dot-folders such
+  as `.docs/`). An existing file is extended, never recreated.

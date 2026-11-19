@@ -8,11 +8,11 @@
 
 ## Why this is a separate workspace
 
-OpenCode loads a single `opencode.json` per session — the one in the
-directory where you launch `opencode`, or the closest one walking up
-the tree. It does **not** merge nested configs. To keep project-level
-and service-level concerns properly isolated, this monorepo uses
-**two kinds of OpenCode workspaces**:
+OpenCode reads the `opencode.json` and the `.opencode/agents/` folders
+found from the launch directory up the tree, into one agent namespace.
+To keep project-level and service-level agents from mixing, this
+monorepo uses **two kinds of OpenCode workspaces**, side by side, with
+no `opencode.json` at the monorepo root:
 
 - **This workspace** (`_project/`) — for project-wide concerns. Launch
   with `cd _project && opencode`.
@@ -41,6 +41,8 @@ implementation are independent.
 
 ```
 <project-root>/
+├── sdd.config.yaml                # pattern settings: CI, git, versioning
+├── CHANGELOG.md                   # one entry per closed version (if versioning)
 ├── _project/                      # ← THIS WORKSPACE (project-level)
 │   ├── AGENTS.md                  # ← you are here
 │   ├── opencode.json              # project workspace config
@@ -49,8 +51,9 @@ implementation are independent.
 │   │   │   └── principal.md       # the single project-level agent
 │   │   └── skills/
 │   │       ├── analyst/           # methodology: requirements → PDR.md
-│   │       └── architect-project/ # methodology: cross-service architecture
-│   └── .docs/                     # project-level knowledge (auto-loaded)
+│   │       ├── architect-project/ # methodology: cross-service architecture
+│   │       └── git-workflow/      # version close, tags, branch protection
+│   └── .docs/                     # project-level knowledge (lazy-loaded)
 │       ├── PDR.md
 │       ├── architecture.md
 │       ├── infra.md
@@ -81,29 +84,33 @@ subfolder, the principal agent in this workspace can still edit files
 
 ## Documentation map
 
-The following files are **already in context** (loaded via
-`opencode.json` `instructions`). Do not re-read them unless you need
-to verify a specific section.
+Your context at session start is `AGENTS.md` (this file) only — no
+project doc is eager-loaded (the root `instructions` list is
+intentionally absent in this workspace). Project docs are large and
+grow over time; loading them eagerly would saturate every session,
+including the trivial ones. Read them with your read tools when the
+work requires them.
 
-| File                          | What it contains                                                |
-| ----------------------------- | --------------------------------------------------------------- |
-| `.docs/PDR.md`                | Functional & non-functional requirements                        |
-| `.docs/architecture.md`       | Inter-service architecture, boundaries, communication patterns  |
-| `.docs/infra.md`              | Server, cloud, environments, CI/CD targets                      |
-| `.docs/contracts/*`           | Service contracts (source of truth for inter-service interfaces)|
+| File / Path                       | What it contains / when to read                            |
+| --------------------------------- | ----------------------------------------------------------- |
+| `../sdd.config.yaml`              | Pattern settings (CI, git, versioning) — **always** read at session start; you own this file |
+| `.docs/PDR.md`                    | Functional & non-functional requirements — read when working on requirements |
+| `.docs/architecture.md`           | Inter-service architecture — read when designing or changing cross-service structure |
+| `.docs/infra.md`                  | Environments, deployment — read when working on infra       |
+| `.docs/contracts/*`               | Service contracts (source of truth for inter-service interfaces) — read the relevant sections only |
+| `.docs/source/`                   | Reference materials provided by the user (scope notes, regulations, spreadsheets) — **read-only** |
+| `../<service-dir>/AGENTS.md`      | When you need to understand a service's role                |
+| `../README.md`                    | When updating root project docs                             |
+| `../.github/workflows/*`          | When working on CI/CD                                       |
+| `../docker-compose.yaml`          | When working on root containerization                       |
 
-Lazy-loaded (read on demand):
-
-| File / Path                      | When to read                                    |
-| -------------------------------- | ----------------------------------------------- |
-| `../<service-dir>/AGENTS.md`     | When you need to understand a service's role    |
-| `../README.md`                   | When updating root project docs                 |
-| `../.github/workflows/*`         | When working on CI/CD                           |
-| `../docker-compose.yaml`         | When working on root containerization           |
+> **Never load whole contracts.** An `external-<provider>.yaml` can be
+> hundreds of KB (a full vendor OpenAPI spec). Read the index or the
+> specific paths you need, never the whole file.
 
 ## Agents in this workspace
 
-- **`principal`** (default at session start) — heavy/reasoning model.
+- **`principal`** (default at session start).
   Owns project-level concerns: PDR, cross-service architecture,
   contracts, infrastructure, project-wide scaffolding (CI/CD, root
   Dockerfile, root README). Loads skills `analyst` and

@@ -1,5 +1,5 @@
 ---
-description: Primary agent for project-level SDD work. Owns project-wide concerns: requirements (PDR), cross-service architecture, infrastructure, service contracts, and any project-level scaffolding (CI/CD, root Dockerfile, root README, monorepo skeleton). Default agent at session start when OpenCode is launched from the project workspace. Uses a heavy/reasoning model. Primarily produces documentation but is allowed to write/edit project-level code artifacts (Dockerfiles, CI configs, scripts, contracts) when the work is project-wide.
+description: "Primary agent for project-level SDD work. Owns project-wide concerns: requirements (PDR), cross-service architecture, infrastructure, service contracts, and any project-level scaffolding (CI/CD, root Dockerfile, root README, monorepo skeleton). Default agent at session start when OpenCode is launched from the project workspace. Primarily produces documentation but is allowed to write/edit project-level code artifacts (Dockerfiles, CI configs, scripts, contracts) when the work is project-wide."
 mode: primary
 ---
 
@@ -217,12 +217,24 @@ This procedure is fast and silent when there's nothing to do.
 
 Check the state of project-level documentation in this order:
 
+0. `../sdd.config.yaml` — exists? If not, propose creating it from the
+   template and ask the user the few values it holds (CI provider, git
+   remote and flow, branch per task or per version, versioning on/off).
+   Never guess them.
 1. `.docs/PDR.md` — exists and has real content (not just template
    placeholders)?
 2. `.docs/architecture.md` — exists and reflects current decisions?
 3. `.docs/infra.md` — exists and describes environments/CI/CD?
 4. `.docs/contracts/*` — exists if services communicate over a
    well-defined interface?
+5. **Version ready to close?** Only when `versioning.enabled: true`: if
+   every macro-task in `<service>/.docs/tasks/v<versioning.current>/`
+   of every service is `done` or `skipped` (read each service's
+   `tasks.md`), propose closing the version (`git-workflow` skill).
+6. `.docs/mockups/index.md` (only if `.docs/mockups/` exists) — lists
+   every file in the folder? Non-blocking health check: compare the
+   listing with the index, surface gaps and ask before fixing. Stay
+   silent when aligned.
 
 Based on what you find, propose **one next action** to the user and wait
 for confirmation. Do not chain multiple actions silently.
@@ -243,6 +255,9 @@ Typical outcomes:
 
 You may **edit**:
 - `AGENTS.md` (project workspace)
+- `../sdd.config.yaml` (pattern settings) — create it at setup; later
+  changes only on explicit user request, since every agent reads it
+- `../CHANGELOG.md` — one entry per closed version
 - `.docs/PDR.md`, `.docs/architecture.md`, `.docs/infra.md`
 - `.docs/contracts/*` (inter-service contracts — these are your domain)
 - Project-level scaffolding: root `Dockerfile`, root `docker-compose.yaml`,
@@ -293,9 +308,18 @@ closing, if the working tree is dirty: run `git status` / `git diff --stat`;
 build a Conventional Commits message scoped to the artifact touched
 (`docs(pdr)`, `docs(contracts)`, `feat(arch)`, `chore(infra)`, …) with a
 footer referencing the relevant doc or ADR; show the message and the files
-to stage; wait for confirmation; on confirmation run `git add <files>`
-(selective, never `-A`) and `git commit -m "<message>"`, then report the
-hash. If the user declines, skip and leave the tree ready. Never `git push`.
+to stage; wait for confirmation; on confirmation run
+`git add -- <files> && git commit -m "<message>" -- <files>` (explicit paths, never `-A`), then
+report the hash. If the user declines, skip and leave the tree ready. Never
+push from a normal session: pushing happens in the `git-workflow` steps you
+own (version close, branch protection) or in the services' wrap-up.
+
+**Git workflow — your part.** Load the `git-workflow` skill for: **version
+close** (when `versioning.enabled: true` and every macro-task of the current
+version is `done`/`skipped` in all services: changelog, release merge, tag,
+bump `versioning.current`) and **branch protection** (GitHub, once, only on
+explicit user request). Triage surfaces a closable version as a proposed
+next action.
 If nothing was modified (read-only/triage session), skip silently.
 
 When requirements are ambiguous, **ask before writing**. This project
