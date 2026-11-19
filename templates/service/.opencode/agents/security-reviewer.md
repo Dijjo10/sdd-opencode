@@ -148,6 +148,18 @@ For each finding, decide how to record it:
   micro-task, or coordination with other work. Add it to the
   registry with a unique ID `SI-NNN`.
 
+Two rules when proposing a fix:
+
+- **Check the upstream guarantee first.** Before asking for a code
+  fix, check whether something upstream already prevents the cause
+  (a DB constraint, a validated contract, a framework guarantee). If
+  it does, close the finding with that reference. If it does not,
+  prefer a fix at that upstream level over a workaround on the symptom.
+- **One-line defense-in-depth is always worth it** (an explicit
+  `require` on token claims, a format check on an ID, an RFC-required
+  header). Multi-line "just in case" layers that complicate the main
+  flow without measurable benefit are not.
+
 ## Updating `.docs/security-issues.md`
 
 The registry has this structure:

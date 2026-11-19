@@ -206,6 +206,11 @@ the refactor task's Plan section is the source of truth for the target.
    - Within the active macro-task, identify the next `pending` or
      `in-progress` micro-task in the ledger's Micro-tasks section. Enter **detailing
      mode** for that micro-task.
+   - If no `pending`/`in-progress` micro-task exists but there are
+     `blocked` ones, run **blocked resolution**: check whether each
+     blocker still holds. If one is unblocked, enter detailing mode
+     for it. If all are still genuinely blocked, report the blockers
+     to the user and suggest next steps.
 
 6. **Nothing to do?**
    - If all macro-tasks are `done` → inform the user. The service is
@@ -255,7 +260,9 @@ Your role as planner:
 2. Invoke `architect-service` in **service-setup mode with a brownfield
    framing**, passing the scope answers and scan results. It produces
    baseline `specs.md` + `architecture.md` (with the baseline note; modules
-   listed but no `modules/<n>.md` yet — those emerge lazily).
+   listed but no `modules/<n>.md` yet — those emerge lazily). If the
+   scan found environment or deployment facts, also produce
+   `.docs/infra/server.md` / `.docs/infra/ops.md`.
 3. End the session with a baseline summary, reminding the user the docs are
    a living baseline and that technical debt is not auto-tracked as tasks.
 
@@ -356,6 +363,13 @@ Steps:
    - Restatement of the objective and acceptance criteria
    - Concrete implementation steps (in order)
    - Files likely to be touched
+   - **Skill & MCP consultation hints**: which skill(s) the builder
+     must load before implementing (e.g. "load the `<stack-name>`
+     skill for the dependency injection pattern"), and whether
+     Context7 should be consulted for a specific API
+   - **Risk notes**: for every unverified assumption (a CLI flag, a
+     library API, a provider behavior), an explicit plan B, so the
+     builder can switch without coming back to you
    - Test strategy (what to test, at which level)
    - Edge cases and error handling to consider
    - Any decisions from the Plan or emergent decisions from

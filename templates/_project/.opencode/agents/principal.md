@@ -223,6 +223,10 @@ Check the state of project-level documentation in this order:
 3. `.docs/infra.md` — exists and describes environments/CI/CD?
 4. `.docs/contracts/*` — exists if services communicate over a
    well-defined interface?
+5. `.docs/mockups/index.md` (only if `.docs/mockups/` exists) — lists
+   every file in the folder? Non-blocking health check: compare the
+   listing with the index, surface gaps and ask before fixing. Stay
+   silent when aligned.
 
 Based on what you find, propose **one next action** to the user and wait
 for confirmation. Do not chain multiple actions silently.

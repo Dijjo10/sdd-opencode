@@ -66,6 +66,13 @@ section (already written) and produces the Micro-tasks section.
    migration genuinely needs to be staged across releases (in which
    case document the staging plan in the Plan section of the ledger,
    under Approach).
+8. **Tests live with the code**. Implementation and its tests are one
+   micro-task. Never decompose "implement X" and "test X" into two
+   micro-tasks: the acceptance gate must be real, not postponed.
+9. **Unverified assumptions get a risk note**. When a micro-task relies
+   on something not yet verified ("the CLI supports this flag", "the
+   library exposes this API"), write a **Risk note** with an explicit
+   plan B. The builder then never stalls on a wrong assumption.
 
 ## Atomicity criteria
 
@@ -328,6 +335,7 @@ decisions, and execution logs all live here.
 - **Tests required**: <unit / integration / e2e — be specific>
 - **Likely impacted files**: <list, best-effort>
 - **Depends on**: <other micro-task IDs or "none">
+- **Risk note**: <optional — unverified assumption + plan B>
 
 ### micro-task-02-<short-name>
 

@@ -222,9 +222,16 @@ Execute the implementation plan step by step:
    before implementing: read the HTML prototype (or an adjacent one if the
    screen isn't indexed) and copy its exact texts, spacing, sizes, and
    colors. Do not invent UI. Ignore this step if the service is headless.
-4. **Implement** the change
+3c. **Data shapes come from their source**. Before defining a DTO,
+   model or query over persisted data, read the schema source (migrations,
+   schema files, contracts). Never assume a row's shape from memory.
+4. **Implement** the change. Validate (compile / type-check / lint) as
+   soon as you have a coherent compilable unit — not after every file,
+   and not once at the very end.
 5. **Write tests** that cover the acceptance criteria — tests are part
-   of the micro-task, not a separate step
+   of the micro-task, not a separate step. Time-dependent tests use
+   dates **relative to now**, never absolute dates: an absolute date
+   is a time-bomb that fails the day it becomes past.
 6. **Run build + tests**. Iterate on failures. Keep iterating until
    the acceptance criteria are met
 7. **Review the diff yourself** before writing the completion log.
