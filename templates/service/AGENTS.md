@@ -353,7 +353,7 @@ builder proposes a git commit:
 - Shows the proposed message and the files to be staged
 - Waits for the user's confirmation
 
-On confirmation, the builder runs `git commit -m "<message>" -- <files>`
+On confirmation, the builder runs `git add -- <files> && git commit -m "<message>" -- <files>`
 (explicit paths, never `-A`). The commit hash is reported in the final
 summary.
 
@@ -377,7 +377,7 @@ micro-task automatically** — open a fresh session for the next one.
 > Commits message (`type(scope): summary`) with a footer referencing the
 > relevant `Task:`/`Micro-task:`/ledger; show the message and the files to
 > stage; wait for confirmation; on confirmation run
-> `git commit -m "<message>" -- <files>` (explicit paths, never `-A` or
+> `git add -- <files> && git commit -m "<message>" -- <files>` (explicit paths, never `-A` or
 > `.` — other services may share the checkout), then report the hash;
 > if the user declines, skip and leave the tree ready. Never push during
 > a session: push, pull request and merge happen only in the

@@ -304,7 +304,7 @@ build a Conventional Commits message scoped to the artifact touched
 (`docs(pdr)`, `docs(contracts)`, `feat(arch)`, `chore(infra)`, …) with a
 footer referencing the relevant doc or ADR; show the message and the files
 to stage; wait for confirmation; on confirmation run
-`git commit -m "<message>" -- <files>` (explicit paths, never `-A`), then
+`git add -- <files> && git commit -m "<message>" -- <files>` (explicit paths, never `-A`), then
 report the hash. If the user declines, skip and leave the tree ready. Never
 push from a normal session: pushing happens in the `git-workflow` steps you
 own (version close, branch protection) or in the services' wrap-up.

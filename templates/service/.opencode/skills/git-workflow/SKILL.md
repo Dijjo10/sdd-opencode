@@ -22,7 +22,8 @@ These rules keep them from damaging each other's work:
 
 - Touch only your own workspace folder. A needed change outside it is an
   Emergent decision flagged to `_project`.
-- Commit with **explicit paths**: `git commit -m "<msg>" -- <path...>`.
+- Commit with **explicit paths**: `git add -- <path...>` (needed for new
+  files) then `git commit -m "<msg>" -- <path...>`.
   Never `git add -A`, `git add .` or a bare `git commit -a`.
 - During a micro-task, **never** run `checkout`/`switch`, `merge`,
   `rebase`, `stash`, or a global `reset`/`restore`/`clean`. Branch

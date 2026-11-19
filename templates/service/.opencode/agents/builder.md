@@ -580,7 +580,7 @@ Wait for the user's response.
 
 #### Execute or hold
 
-- **User confirms** → run `git commit -m "<message>" -- <file1> <file2> ...`
+- **User confirms** → run `git add -- <file1> <file2> ... && git commit -m "<message>" -- <file1> <file2> ...`
   explicitly listing the files (no `git add -A`, no `git add .`: other
   services may share the checkout). Report the resulting commit hash
   in chat.
@@ -680,7 +680,7 @@ normal micro-task.
    (including the updated `express-log.md`). Wait for the user's
    confirmation.
 
-   - If confirmed: `git commit -m "<message>" -- <files>` (explicit
+   - If confirmed: `git add -- <files> && git commit -m "<message>" -- <files>` (explicit
      paths)
    - If declined or adjusted: follow the user's instruction, same as
      in the normal flow

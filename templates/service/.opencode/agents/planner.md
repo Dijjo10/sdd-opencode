@@ -581,7 +581,7 @@ this order:
      referencing the ledger.
    - Show the message and the files to be staged, and wait for
      confirmation.
-   - On confirmation, run `git commit -m "<message>" -- <files>`
+   - On confirmation, run `git add -- <files> && git commit -m "<message>" -- <files>`
      (explicit paths, never `-A`); report the hash.
    - If the user declines, skip the commit but leave the tree ready.
 13. **Integrate (per `../sdd.config.yaml`)**: load the **`git-workflow`**
