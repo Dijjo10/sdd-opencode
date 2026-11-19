@@ -515,9 +515,10 @@ the change to the relevant documentation in the same micro-task.
 **Living docs describe the current state only.** `specs.md`,
 `architecture.md`, `modules/*.md` and `infra/*` say what the service *is*,
 not how it got there: rewrite the affected passage instead of appending
-"changed in task NN" notes or keeping superseded alternatives. History
-lives in the ledgers; a living doc may point to one ledger, once, when the
-reason behind a choice matters.
+"changed in task NN" notes inside the text or keeping superseded
+alternatives. History lives in the ledgers; the only trace of it in a
+living doc is its final `Changelog` section, one line per macro-task
+(`- <date>: <what changed> (<id>)`).
 
 ### Triggers — when to update what
 

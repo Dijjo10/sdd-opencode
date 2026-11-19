@@ -433,8 +433,9 @@ Run as part of wrap-up, after the reviews and the consolidation:
 3. Append the `wrapped up` line to `task-log.md` (≤ 200 chars).
 4. Check that the **living docs** (`specs.md`, `architecture.md`,
    `modules/*.md`) describe the current state only: no "changed in
-   task NN" notes, no superseded alternatives. History stays in the
-   ledger; the living docs point to it at most once.
+   task NN" notes inside the text, no superseded alternatives. The only
+   history in a living doc is its `Changelog` section, one line per
+   macro-task; the details stay in the ledger.
 5. Leave the log file as it is: after wrap-up nobody loads it again
    unless investigating.
 
