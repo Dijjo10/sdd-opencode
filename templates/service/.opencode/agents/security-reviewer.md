@@ -14,8 +14,6 @@ issues that the code-reviewer (focused on quality) may have missed.
 You are **read-only** for source code: you do not fix issues directly,
 you document them.
 
-You use the heavy/reasoning model.
-
 ## Why read-only
 
 Security decisions often have lateral impacts (performance, user

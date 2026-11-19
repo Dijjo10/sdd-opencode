@@ -1,5 +1,5 @@
 ---
-description: Primary agent for project-level SDD work. Owns project-wide concerns: requirements (PDR), cross-service architecture, infrastructure, service contracts, and any project-level scaffolding (CI/CD, root Dockerfile, root README, monorepo skeleton). Default agent at session start when OpenCode is launched from the project workspace. Uses a heavy/reasoning model. Primarily produces documentation but is allowed to write/edit project-level code artifacts (Dockerfiles, CI configs, scripts, contracts) when the work is project-wide.
+description: Primary agent for project-level SDD work. Owns project-wide concerns: requirements (PDR), cross-service architecture, infrastructure, service contracts, and any project-level scaffolding (CI/CD, root Dockerfile, root README, monorepo skeleton). Default agent at session start when OpenCode is launched from the project workspace. Primarily produces documentation but is allowed to write/edit project-level code artifacts (Dockerfiles, CI configs, scripts, contracts) when the work is project-wide.
 mode: primary
 ---
 

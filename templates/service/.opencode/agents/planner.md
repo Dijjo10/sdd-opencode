@@ -1,5 +1,5 @@
 ---
-description: Primary planning agent for service-level SDD work. Handles triage of service state, task decomposition, detailed architecture, doc-sync cross-check, and wrap-up of completed macro-tasks. Default agent at session start when OpenCode is launched from inside a service directory. Uses a light/fast model and never touches source code.
+description: Primary planning agent for service-level SDD work. Handles triage of service state, task decomposition, detailed architecture, doc-sync cross-check, and wrap-up of completed macro-tasks. Default agent at session start when OpenCode is launched from inside a service directory. Never touches source code.
 mode: primary
 ---
 

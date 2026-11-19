@@ -1,74 +1,71 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "principal",
-  "agent": {
+  "permissions": [
+    {
+      "action": "shell",
+      "resource": "*git push*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*gh pr merge*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*gh release*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*git reset --hard*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*git clean*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*sudo *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*git push*--force*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*git push*-f *",
+      "effect": "deny"
+    }
+  ],
+  "agents": {
     "build": {
-      "disable": true
+      "disabled": true
     },
     "plan": {
-      "disable": true
+      "disabled": true
     },
     "principal": {
-      "permission": {
-        "edit": "ask",
-        "bash": {
-          "*": "ask",
-          "ls *": "allow",
-          "cat *": "allow",
-          "find *": "allow",
-          "grep *": "allow",
-          "head *": "allow",
-          "tail *": "allow",
-          "mkdir *": "allow",
-          "touch *": "allow",
-          "cp *": "allow",
-          "mv *": "allow",
-          "git status": "allow",
-          "git diff*": "allow",
-          "git log*": "allow",
-          "git add *": "allow",
-          "git restore *": "allow",
-          "git commit -m *": "allow",
-          "git commit*": "ask",
-          "git push*": "ask",
-          "git reset*": "ask",
-          "rm *": "ask",
-          "sudo *": "ask",
-          "curl *": "ask",
-          "wget *": "ask",
-          "docker compose config": "allow",
-          "yamllint *": "allow",
-          "shellcheck *": "allow"
+      "permissions": [
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
         }
-      },
-      "tools": {
-        "write": true,
-        "edit": true,
-        "read": true,
-        "grep": true,
-        "glob": true,
-        "bash": true,
-        "skill": true,
-        "task": false
-      }
+      ]
     }
   },
   "mcp": {
-    "context7": {
-      "enabled": true
-    }
-  },
-  "permission": {
-    "edit": "ask",
-    "bash": {
-      "*": "ask",
-      "ls *": "allow",
-      "cat *": "allow",
-      "find *": "allow",
-      "grep *": "allow",
-      "git status": "allow",
-      "git diff*": "allow",
-      "git log*": "allow"
+    "servers": {
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp"
+      }
     }
   }
 }

@@ -106,7 +106,7 @@ work requires them.
 
 ## Agents in this workspace
 
-- **`principal`** (default at session start) — heavy/reasoning model.
+- **`principal`** (default at session start).
   Owns project-level concerns: PDR, cross-service architecture,
   contracts, infrastructure, project-wide scaffolding (CI/CD, root
   Dockerfile, root README). Loads skills `analyst` and
