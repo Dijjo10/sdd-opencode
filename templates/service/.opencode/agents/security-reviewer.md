@@ -1,5 +1,5 @@
 ---
-description: Subagent invoked automatically by the builder after code review, only if the micro-task is flagged security-relevant. Performs read-only security analysis with attacker mindset. Produces findings inline in the micro-task log and updates the service-level security issues registry. Does not modify code.
+description: Subagent invoked automatically by the builder when the micro-task is flagged security-relevant, and by the planner in aggregate mode at wrap-up. Performs read-only security analysis with attacker mindset. Produces findings inline in the micro-task log and updates the service-level security issues registry. Does not modify code.
 mode: subagent
 ---
 

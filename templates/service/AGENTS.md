@@ -63,18 +63,26 @@ the current work.
 
 ## Documentation map
 
-**Already in your context** (no need to re-read):
+**Already in your context** (loaded via root `instructions` in
+`opencode.json` — no need to re-read):
 
 | File                                 | Purpose                                         |
 | ------------------------------------ | ----------------------------------------------- |
-| `../_project/.docs/PDR.md`                    | Project requirements                            |
-| `../_project/.docs/architecture.md`           | Cross-service architecture                      |
-| `../_project/.docs/contracts/*`               | Service contracts (interfaces to others)        |
 | `.docs/specs.md`                     | What this service does / does not do            |
-| `.docs/architecture/architecture.md` | Internal architecture                           |
-| `.docs/infra/server.md`              | Server, env, configuration                      |
-| `.docs/infra/ops.md`                 | CI/CD, deployment                               |
-| `.docs/security-issues.md`           | Open & recently-closed security issues          |
+
+**Mandatory reads** (lazy by mechanism, mandatory by role — each agent
+reads these with its read tools at session/task start, per the
+**Context partitioning** table below):
+
+| File / pattern                        | Read when…                                      |
+| -------------------------------------- | ----------------------------------------------- |
+| `../_project/.docs/PDR.md`            | Planning work that touches requirements         |
+| `../_project/.docs/architecture.md`   | Cross-service architecture                      |
+| `../_project/.docs/contracts/*`       | Service contracts (interfaces to others)        |
+| `.docs/architecture/architecture.md`  | Internal architecture                           |
+| `.docs/infra/server.md`               | Server, env, configuration                      |
+| `.docs/infra/ops.md`                  | Deployment / ops                                |
+| `.docs/security-issues.md`            | Open & recently-closed security issues          |
 
 **Lazy-loaded** (read when relevant):
 
@@ -86,48 +94,62 @@ the current work.
 | `.docs/tasks/task-NN-*.md`             | Macro-task ledger: Plan, Micro-tasks, Decisions, Execution logs all in one |
 | `.docs/express-log.md`                 | Auditing recent quick fixes made in express mode |
 
+> **Never load whole contracts.** A single `external-<provider>.yaml`
+> can be hundreds of KB. Read the index/sections you need, not the
+> whole file.
+
 ## Context partitioning
 
-Each agent has a **partitioned set of eager-loaded documents**, declared
-per-agent in `opencode.json`. This avoids saturating the context of
-focused agents (builder, reviewers) with documents that are only
-relevant to broad orchestration (planner).
+`instructions` exists **only at the root** of `opencode.json`. There is
+no per-agent variant: an `instructions` key inside an `agent` block is
+invalid config — opencode forwards it to the model provider as an
+unknown option (silent no-op or hard error, depending on provider).
+To change what an agent reads, edit the tables in this file and the
+agent's `.opencode/agents/<name>.md`. Keep the root `instructions`
+list minimal: it is injected into every agent — internal ones included
+(`title`, `compaction`).
 
-Eager-loaded by agent:
+Context partitioning is achieved through **mandatory reads**: each
+agent reads its docs with normal read tools at session/task start.
 
-| Agent              | Eager-loaded docs                                                                 |
-| ------------------ | --------------------------------------------------------------------------------- |
-| `planner`          | PDR, project arch, contracts, specs, service arch, server, ops, security-issues   |
-| `builder`          | specs, service arch, server                                                       |
-| `code-reviewer`    | specs, service arch                                                               |
-| `security-reviewer`| specs, service arch, security-issues                                              |
+| Agent              | Mandatory reads at start                                            |
+| ------------------ | -------------------------------------------------------------------- |
+| `planner`          | service arch, server; PDR / contracts / ops / security-issues when the session touches them |
+| `builder`          | service arch, server                                                 |
+| `code-reviewer`    | service arch                                                         |
+| `security-reviewer`| service arch, security-issues                                        |
 
-Documents not eager-loaded for an agent can still be read on demand
-with `cat` or other read tools when the work requires it. The partition
-optimizes the default state, not the maximum reachable state.
+Documents outside an agent's mandatory set can still be read on demand
+when the work requires it. The partition optimizes the default state,
+not the maximum reachable state. Never point a root `instructions`
+glob at `../_project/.docs/contracts/` — external provider contracts
+can be enormous (see the warning above).
 
-If you customize the agents or add new ones, set their `instructions`
-field appropriately in `opencode.json`. Resist the temptation to load
-"everything just in case" — it degrades instruction-following on the
-relevant work.
+Resist the temptation to load "everything just in case" — it degrades
+instruction-following on the relevant work.
 
 ## Agents in this service
 
-- **`planner`** (default at session start) — heavy/reasoning model.
-  Triages session, plans tasks, writes documentation, runs wrap-up at
-  macro-task completion. Cannot touch source code.
-- **`builder`** — light/fast model. Implements micro-tasks: writes code,
-  tests, iterates with build/test cycles. Auto-accepts edits within the
-  micro-task perimeter. Automatically invokes reviewers at completion.
-- **`@code-reviewer`** — subagent, heavy/reasoning model. Reviews builder
-  output, applies fixes directly to code and docs.
-- **`@security-reviewer`** — subagent, heavy/reasoning model. Read-only.
-  Produces security report inline in the micro-task log and updates
+- **`planner`** (default at session start). Triages session, plans
+  tasks, writes documentation, runs wrap-up at macro-task completion.
+  Cannot touch source code.
+- **`builder`**. Implements micro-tasks: writes code, tests, iterates
+  with build/test cycles. Auto-accepts edits within the micro-task
+  perimeter. Invokes `@security-reviewer` automatically when the
+  micro-task is flagged `security-relevant: true`; `@code-reviewer` on
+  explicit request.
+- **`@code-reviewer`** — subagent. Reviews builder output, applies fixes
+  directly to code and docs. On demand per micro-task, mandatory at
+  wrap-up (aggregate review of the macro-task).
+- **`@security-reviewer`** — subagent. Read-only. Produces a security
+  report inline in the micro-task log and updates
   `.docs/security-issues.md`. Invoked only when the micro-task is flagged
-  `security-relevant: true`.
+  `security-relevant: true`, and in aggregate at wrap-up.
 
-Switch primary agents with `Tab`. Subagents are invoked automatically by
-the builder; you can also invoke them manually with `@name` at any time.
+Switch primary agents with `Tab`. Subagents are invoked by the builder
+(security-reviewer automatically when flagged, code-reviewer on request)
+or by the planner at wrap-up; you can also invoke them manually with
+`@name` at any time.
 
 > **Note on workspace separation**: this service is its own OpenCode
 > workspace. The project-level workspace (`_project/` in the monorepo)
@@ -172,7 +194,10 @@ agent are declared **once** in your global OpenCode config at
 `~/.config/opencode/opencode.json`, not in this project's
 `opencode.json`. This keeps personal model preferences out of the
 repository. They are not touched by the planner's configuration
-sync.
+sync. Recommended split (from field use): `planner` and `builder` run
+high-frequency work (triage, detailing, implementation) and can use a
+light/fast model; `code-reviewer` and `security-reviewer` carry the
+judgment-heavy gates and deserve a heavy/reasoning model.
 
 ## Session behavior
 
@@ -279,25 +304,26 @@ User switches to `builder`. Builder:
 - Appends a **completion log** subsection to the Execution logs section
   of `task-NN-<n>.md`, documenting the test subset that was run
 
-### 7. Automatic review chain (builder → subagents)
+### 7. Review chain (builder → subagents)
 
-When builder has finished the implementation and completion log, it
-**automatically invokes the review chain**:
+When builder has finished the implementation and completion log:
 
-- Announces in chat: "Implementation complete. Invoking @code-reviewer
-  automatically. Interrupt now if you want to skip."
-- Invokes `@code-reviewer` via the task tool. Code-reviewer reviews
-  diff + plan adherence, applies fixes directly to code and docs, and
-  appends a **review changes** subsection within the current micro-task's Execution log.
-- If the micro-task is flagged `security-relevant: true`, announces:
-  "Code review complete. Micro-task is security-relevant. Invoking
+- If the micro-task is flagged `security-relevant: true`, the builder
+  announces: "Micro-task is security-relevant. Invoking
   @security-reviewer. Interrupt to skip." Then invokes
-  `@security-reviewer` which runs read-only analysis, appends a
-  **security review** subsection within the current micro-task's Execution log, and updates
-  `.docs/security-issues.md` if new issues are found.
-
-The user can interrupt between announcement and invocation, or invoke
-reviewers manually with `@name` at any time.
+  `@security-reviewer`, which runs read-only analysis, appends a
+  **security review** subsection within the current micro-task's
+  Execution log, and updates `.docs/security-issues.md` if new issues
+  are found.
+- **Code review is on demand**: per-micro-task code review is **not
+  invoked automatically** — with passing tests, forward progress is
+  preferred. The user can request it at any time ("run code review")
+  or invoke `@code-reviewer` directly; the code-reviewer reviews diff +
+  plan adherence, applies fixes directly to code and docs, and appends
+  a **review changes** subsection within the current micro-task's
+  Execution log.
+- Aggregate code quality is reviewed **at the macro-task wrap-up**
+  (mandatory — see step 10).
 
 ### 8. Commit proposal
 
@@ -420,8 +446,8 @@ do both, then stop. Never chain silently.
 Not every change deserves the full pipeline. For trivial work — typo
 fixes, dependency bumps, config tweaks, minor renames — both planner
 and builder support **express mode**, which bypasses micro-task
-decomposition and documentation tracking while keeping the code-reviewer
-as a safety net.
+decomposition and documentation tracking while keeping build + tests
+green and a commit proposal. Code review stays on demand.
 
 ### When it applies
 
@@ -453,8 +479,9 @@ before proceeding.
 - Planner produces a one-line plan in chat (no files created)
 - Builder implements the change
 - Builder runs build + tests
-- Builder invokes `@code-reviewer` (safety net, even for trivial work)
-- If code-reviewer modifies code, builder re-runs build + tests
+- No automatic code review — the user can request it ("run code
+  review" / `@code-reviewer`); if the code-reviewer modifies code,
+  builder re-runs build + tests
 - Builder appends a one-line entry to `.docs/express-log.md`
 - Builder proposes a commit (Conventional Commits format, no SDD
   footer, just `Ref: .docs/express-log.md`) and waits for user
@@ -465,7 +492,7 @@ before proceeding.
 
 - No entry in any Micro-tasks section
 - No subsection in any Execution logs section
-- No `decisions.md` entry
+- No Emergent decisions entry
 - No status change in `tasks.md`
 - No security-review (by constraint, express excludes security-relevant
   changes)
@@ -690,7 +717,7 @@ SDD-KEEP: <reason>, see <reference>
 
 Examples:
 
-- `SDD-KEEP: backward compat for v1 API, remove after v2 migration (decisions.md SI-decision-12)`
+- `SDD-KEEP: backward compat for v1 API, remove after v2 migration (see task-12 ledger, ED-07)`
 - `SDD-KEEP: feature-flagged, activated by FEATURE_X (see specs.md)`
 - `SDD-KEEP: temporary parallel impl during migration to NewService, remove in task-NN`
 
@@ -792,3 +819,6 @@ suggestions (consolidate, split, archive) — never executes them silently.
   user instruction.
 - **Do** keep incremental files structured and short. Narrative belongs
   in chat, not in committed files.
+- **Do** check that a file exists with a read/stat on its **exact path**
+  before writing it — never with a glob (globs may skip dot-folders such
+  as `.docs/`). An existing file is extended, never recreated.

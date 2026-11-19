@@ -50,7 +50,7 @@ implementation are independent.
 │   │   └── skills/
 │   │       ├── analyst/           # methodology: requirements → PDR.md
 │   │       └── architect-project/ # methodology: cross-service architecture
-│   └── .docs/                     # project-level knowledge (auto-loaded)
+│   └── .docs/                     # project-level knowledge (lazy-loaded)
 │       ├── PDR.md
 │       ├── architecture.md
 │       ├── infra.md
@@ -81,25 +81,28 @@ subfolder, the principal agent in this workspace can still edit files
 
 ## Documentation map
 
-The following files are **already in context** (loaded via
-`opencode.json` `instructions`). Do not re-read them unless you need
-to verify a specific section.
+Your context at session start is `AGENTS.md` (this file) only — no
+project doc is eager-loaded (the root `instructions` list is
+intentionally absent in this workspace). Project docs are large and
+grow over time; loading them eagerly would saturate every session,
+including the trivial ones. Read them with your read tools when the
+work requires them.
 
-| File                          | What it contains                                                |
-| ----------------------------- | --------------------------------------------------------------- |
-| `.docs/PDR.md`                | Functional & non-functional requirements                        |
-| `.docs/architecture.md`       | Inter-service architecture, boundaries, communication patterns  |
-| `.docs/infra.md`              | Server, cloud, environments, CI/CD targets                      |
-| `.docs/contracts/*`           | Service contracts (source of truth for inter-service interfaces)|
+| File / Path                       | What it contains / when to read                            |
+| --------------------------------- | ----------------------------------------------------------- |
+| `.docs/PDR.md`                    | Functional & non-functional requirements — read when working on requirements |
+| `.docs/architecture.md`           | Inter-service architecture — read when designing or changing cross-service structure |
+| `.docs/infra.md`                  | Environments, deployment — read when working on infra       |
+| `.docs/contracts/*`               | Service contracts (source of truth for inter-service interfaces) — read the relevant sections only |
+| `.docs/source/`                   | Reference materials provided by the user (scope notes, regulations, spreadsheets) — **read-only** |
+| `../<service-dir>/AGENTS.md`      | When you need to understand a service's role                |
+| `../README.md`                    | When updating root project docs                             |
+| `../.github/workflows/*`          | When working on CI/CD                                       |
+| `../docker-compose.yaml`          | When working on root containerization                       |
 
-Lazy-loaded (read on demand):
-
-| File / Path                      | When to read                                    |
-| -------------------------------- | ----------------------------------------------- |
-| `../<service-dir>/AGENTS.md`     | When you need to understand a service's role    |
-| `../README.md`                   | When updating root project docs                 |
-| `../.github/workflows/*`         | When working on CI/CD                           |
-| `../docker-compose.yaml`         | When working on root containerization           |
+> **Never load whole contracts.** An `external-<provider>.yaml` can be
+> hundreds of KB (a full vendor OpenAPI spec). Read the index or the
+> specific paths you need, never the whole file.
 
 ## Agents in this workspace
 

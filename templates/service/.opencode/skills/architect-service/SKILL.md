@@ -392,7 +392,8 @@ stable documentation.
 ### Input
 
 - The Plan section of the macro-task ledger (architectural intent)
-- All `micro-task-*.md` completion logs of the macro-task
+- The Execution logs section of the ledger (completion logs of all
+  micro-tasks of the macro-task)
 - The Emergent decisions section of the ledger if non-empty (emergent decisions surfaced
   during detailing and implementation — may differ from or refine
   what the Plan assumed)

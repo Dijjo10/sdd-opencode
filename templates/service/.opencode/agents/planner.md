@@ -1,5 +1,5 @@
 ---
-description: Primary planning agent for service-level SDD work. Handles triage of service state, task decomposition, detailed architecture, doc-sync cross-check, and wrap-up of completed macro-tasks. Default agent at session start when OpenCode is launched from inside a service directory. Uses a heavy/reasoning model and never touches source code.
+description: Primary planning agent for service-level SDD work. Handles triage of service state, task decomposition, detailed architecture, doc-sync cross-check, and wrap-up of completed macro-tasks. Default agent at session start when OpenCode is launched from inside a service directory. Uses a light/fast model and never touches source code.
 mode: primary
 ---
 
@@ -425,18 +425,17 @@ artifact. You may **not** mark the macro-task `done` unless:
 - the aggregate code review has run and its **"Wrap-up review" section
   exists in the ledger** (step 2);
 - the **full test suite is green** (step 3);
-- the **CI gate is green** — or CI is not yet defined (step 3b);
 - the **wrap-up commit has been proposed** to the user (final step).
 
 If any precondition cannot be satisfied, **stop and surface it** — never
 close the macro-task silently with a known failure. Perform the wrap-up in
 this order:
 
-1. **Aggregate review**: read the macro-task ledger (Plan, Micro-tasks, Emergent decisions, Execution logs sections) and
-   `micro-task-*.md` files. Summarize in chat the overall scope of what
-   was built and how it compares to the original plan. Note any
-   divergences from plan (features added/removed/modified during
-   implementation).
+ 1. **Aggregate review**: read the macro-task ledger (Plan, Micro-tasks, Emergent decisions, Execution logs sections).
+    Summarize in chat the overall scope of what
+    was built and how it compares to the original plan. Note any
+    divergences from plan (features added/removed/modified during
+    implementation).
 2. **Aggregate code review (mandatory)**: invoke `@code-reviewer` via
    the `task` tool with explicit instruction to review the **aggregate
    diff of the entire macro-task**, not a single micro-task. This is
@@ -474,23 +473,10 @@ this order:
      micro-task to fix the regression, or mark a previously `done`
      micro-task as `blocked` if the failure originates from there
      and needs revision.
-   - Do not proceed until the suite passes (or the user explicitly accepts
-     the failures with documented reason). A wrap-up that "completes" while
-     reporting red tests is a defect — **fix, don't defer**.
-3b. **CI gate (mandatory, mirrors the CI workflow)**: the wrap-up must
-   reproduce locally the checks the CI pipeline enforces, so a macro-task is
-   never closed in a state the pipeline would reject.
-   - Read the CI workflow definitions (`.github/workflows/*.yml`, or the
-     equivalent for the project's CI) and **derive the exact checks** they
-     run: lint, type-check, test, build, and any custom steps. The workflow
-     yaml is the single source of truth — do not invent an arbitrary set.
-   - Run those checks locally, in the order the pipeline runs them.
-   - If they all pass, proceed. If any fails, **block the wrap-up** exactly
-     as in step 3 (fix, don't defer).
-   - **If no CI workflow exists yet** (early-phase project): the CI gate is
-     **not invoked** — state "CI not defined, CI gate skipped" and proceed.
-     Do not fabricate a fallback; the full test suite (step 3) still applies.
-4. **Consolidate module architecture**: this is the key architectural
+    - Do not proceed until the suite passes (or the user explicitly accepts
+      the failures with documented reason). A wrap-up that "completes" while
+      reporting red tests is a defect — **fix, don't defer**.
+ 4. **Consolidate module architecture**: this is the key architectural
    step of wrap-up. **Invoke `architect-service` skill in "macro-task
    consolidation" mode**. The skill guides you through:
    - Reading the Plan section + actual implemented code
@@ -503,13 +489,13 @@ this order:
      service-level implications
    The stable state of the module(s) is what gets documented here —
    the Plan section remains as historical intent.
-5. **Review emergent decisions**: if the Emergent decisions section is non-empty,
-   review its entries. These are the emergent decisions and
-   discoveries that surfaced during detailing and implementation
-   (things the Plan did not anticipate). For each entry, decide:
-   - If it's purely tactical and already absorbed by the final code,
-     leave it in `decisions.md` as historical record — no further
-     action
+ 5. **Review emergent decisions**: if the Emergent decisions section is non-empty,
+    review its entries. These are the emergent decisions and
+    discoveries that surfaced during detailing and implementation
+    (things the Plan did not anticipate). For each entry, decide:
+    - If it's purely tactical and already absorbed by the final code,
+      leave it in the ledger's Emergent decisions section as
+      historical record — no further action
    - If it has implications that should outlive this macro-task,
      propose promoting it to `.docs/architecture/architecture.md` or
      to the appropriate `modules/<n>.md`
@@ -542,12 +528,12 @@ this order:
    from `wrap-up-pending` to `done`. **Append a `wrapped up` entry to
    `.docs/tasks/task-log.md`** with a one-line outcome (chronological
    timeline). Surface the next macro-task in the queue.
-11. **Refactor closure** (only if the macro-task name starts with
-   `task-NN-refactor-`): verify that the target architecture described
-   in the refactor task's Plan section has been realized in the code,
-   and that `specs.md` / `architecture.md` / `modules/<n>.md` now
-   reflect the refactored state (these were updated in step 3 via the
-   architect-service consolidation mode). Then check `tasks.md` for any
+ 11. **Refactor closure** (only if the macro-task name starts with
+    `task-NN-refactor-`): verify that the target architecture described
+    in the refactor task's Plan section has been realized in the code,
+    and that `specs.md` / `architecture.md` / `modules/<n>.md` now
+    reflect the refactored state (these were updated in step 4 via the
+    architect-service consolidation mode). Then check `tasks.md` for any
    macro-tasks that were marked `blocked` during the refactor's impact
    mapping and that depended on this refactor — transition them back
    to `pending` or `in-progress` as appropriate. Finally, clean up any
@@ -657,13 +643,13 @@ normal flow to the user.
    will change, which files are likely touched, what the expected
    outcome is
 3. Hand off to the builder: "Express plan ready. Switch to the `builder`
-   agent with Tab — it will implement, run code review, and log the
-   fix to `.docs/express-log.md`."
+   agent with Tab — it will implement, log the fix to
+   `.docs/express-log.md`, and propose a commit."
 4. End your turn
 
 Do not touch the macro-task ledger in express mode. Express work doesn't go through the ledger at all —
-no `decisions.md`, no updates to `tasks.md`. Express work is intentionally
-lightweight.
+no Emergent decisions entries, no updates to `tasks.md`. Express work is
+intentionally lightweight.
 
 #### When the user asks for express but it doesn't qualify
 

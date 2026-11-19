@@ -353,7 +353,7 @@ decisions, and execution logs all live here.
 > discoveries surface during detailing or implementation. Each entry
 > must cite which aspect of `Plan` it revises or works around.
 
-### D-01 — <Short title>
+### ED-01 — <Short title>
 
 - **Status**: active | superseded by <ref>
 - **Date**: <YYYY-MM-DD>
@@ -444,8 +444,10 @@ plan, lessons learned, follow-up macro-tasks suggested.)
 - Micro-tasks section can have status updates (pending → in-progress
   → done) but the descriptive content (Objective, Acceptance, Tests)
   is also immutable after planning.
-- Numbering is stable. Once `D-01` exists, a new emergent decision
-  is `D-02`, even if `D-01` becomes superseded.
+- Numbering is stable, and **emergent decisions use the `ED-` prefix**
+  (distinct from the Plan's `D-` design decisions, so a reference like
+  `ED-03` is unambiguous). Once `ED-01` exists, a new emergent decision
+  is `ED-02`, even if `ED-01` becomes superseded.
 - **Never delete** entries. Superseded decisions stay; blocked
   micro-tasks stay; old execution logs stay.
 

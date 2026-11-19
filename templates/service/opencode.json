@@ -1,6 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "planner",
+  "instructions": [
+    ".docs/specs.md"
+  ],
   "agent": {
     "build": {
       "disable": true
@@ -9,16 +12,6 @@
       "disable": true
     },
     "planner": {
-      "instructions": [
-        "../_project/.docs/PDR.md",
-        "../_project/.docs/architecture.md",
-        "../_project/.docs/contracts/*.yaml",
-        ".docs/specs.md",
-        ".docs/architecture/architecture.md",
-        ".docs/infra/server.md",
-        ".docs/infra/ops.md",
-        ".docs/security-issues.md"
-      ],
       "permission": {
         "edit": "ask",
         "bash": {
@@ -51,11 +44,6 @@
       }
     },
     "builder": {
-      "instructions": [
-        ".docs/specs.md",
-        ".docs/architecture/architecture.md",
-        ".docs/infra/server.md"
-      ],
       "permission": {
         "edit": "allow",
         "bash": {
@@ -102,10 +90,6 @@
       }
     },
     "code-reviewer": {
-      "instructions": [
-        ".docs/specs.md",
-        ".docs/architecture/architecture.md"
-      ],
       "permission": {
         "edit": "allow",
         "bash": {
@@ -142,11 +126,6 @@
       }
     },
     "security-reviewer": {
-      "instructions": [
-        ".docs/specs.md",
-        ".docs/architecture/architecture.md",
-        ".docs/security-issues.md"
-      ],
       "permission": {
         "edit": "deny",
         "bash": {

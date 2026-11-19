@@ -9,12 +9,6 @@
       "disable": true
     },
     "principal": {
-      "instructions": [
-        ".docs/PDR.md",
-        ".docs/architecture.md",
-        ".docs/infra.md",
-        ".docs/contracts/*.yaml"
-      ],
       "permission": {
         "edit": "ask",
         "bash": {
